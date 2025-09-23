@@ -1,0 +1,1 @@
+The naming convention for all files in this folder will be <analysis>_<date>_<nameofperson>. For example, MultiDaycallers_23Sep_John
