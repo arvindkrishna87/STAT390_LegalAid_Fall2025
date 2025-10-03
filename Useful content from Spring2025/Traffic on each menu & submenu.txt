@@ -1,0 +1,6 @@
+https://prezi.com/view/LTUtNNcyiPHuVTXx12wD/
+
+
+The "number of clients" are the number of distinct contact session IDs. Note that the same client will have a different contact session ID if they call again. Only for a courtesy callback the person retains their original contact session ID.
+
+The "number of instances" are the number of times the menu/submenu appears in the data, i.e., the number of times the menu has been navigated.
