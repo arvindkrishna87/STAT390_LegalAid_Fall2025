@@ -1,0 +1,1 @@
+This is where teams can work internally amongst themselves, conduct ad-hoc analysis, etc. This folder won't be seen for grading purposes. This folder is to make it convenient for everyone to just use one GitHub repository for their ad-hoc work, internal-team work, and graded work.
