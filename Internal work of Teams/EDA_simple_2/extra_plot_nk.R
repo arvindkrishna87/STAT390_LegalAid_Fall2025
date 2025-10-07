@@ -17,7 +17,10 @@ calls_by_hour_all <-
 
 calls_by_hour_car <-
   car %>%
-  mutate(hour = hour(activity_start_timestamp)) %>%
+  mutate(
+    activity_start_timestamp = ymd_hms(activity_start_timestamp),
+    activity_start_timestamp = format(activity_start_timestamp, "%Y-%m-%d %H:%M:%S"),
+    hour = hour(activity_start_timestamp)) %>%
   count(hour) %>%
   rename(CAR = n)
 
