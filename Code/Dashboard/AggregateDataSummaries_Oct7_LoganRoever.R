@@ -3,6 +3,10 @@
 # load packages and data
 library(tidyverse)
 
+## USER INPUT REQUIRED -- put path on local computer
+car_data <- read_csv(file = "/Users/loganroever/Desktop/stat390.nosync/STAT390_LegalAid_Fall2025/Internal work of Teams/Logan/car_data.csv" )
+all_calls_data <- read_csv(file = "/Users/loganroever/Desktop/stat390.nosync/STAT390_LegalAid_Fall2025/Internal work of Teams/Logan/all_calls_data.csv" )
+
 # clean variable names
 car_data <- car_data %>% 
   janitor::clean_names()
