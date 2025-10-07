@@ -1,4 +1,4 @@
-## test to push team folder
+## read in CAR ----
 
 #load packages-------------
 library(readxl)
@@ -8,7 +8,7 @@ library(purrr)
 library(lubridate)
 
 #upload data----------------
-file_path <- "~/Desktop/stat 390/Call journey data/"
+file_path <- 'data/CAR/'
 file_list <- list.files(path = file_path, pattern = "\\.xlsx$", full.names = TRUE)
 
 #create the month/year column--------------
@@ -26,6 +26,7 @@ read_and_tag <- function(file) {
   df$month_year <- extract_month_year(file)
   return(df)
 }
+
 combined_data <- map_dfr(file_list, read_and_tag)
 
 combined_data <- combined_data %>%
@@ -36,7 +37,5 @@ combined_data <- combined_data %>%
   )
 
 #save the csv-----------------
-write.csv(combined_data, file = "~/Desktop/stat 390/Call journey data/combined_call_data.csv", row.names = FALSE)
-
-
+write.csv(combined_data, file = 'data/combined_data.csv')
 
