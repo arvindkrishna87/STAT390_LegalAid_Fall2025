@@ -1,0 +1,5 @@
+Here is the link of general understanding of the structure of the All Calls Data: https://www.cisco.com/c/en/us/support/docs/unified-communications/webex-calling/220377-understand-detailed-call-history-report.html
+
+
+Here is the link consisting of description of column names of the All Calls Data: https://help.webex.com/en-us/article/nmug598/Reports-for-Your-Cloud-Collaboration-Portfolio#WxC-detailed-call-history-report
+
