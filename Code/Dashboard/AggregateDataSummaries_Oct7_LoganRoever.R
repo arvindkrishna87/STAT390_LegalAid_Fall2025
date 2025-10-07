@@ -34,9 +34,6 @@ avg_activities <- car_data %>%
 write_csv(counted_data, file = "/Users/loganroever/Desktop/stat390.nosync/STAT390_LegalAid_Fall2025/Internal work of Teams/Logan/counted_data.csv")
 write_csv(avg_activities, file = "/Users/loganroever/Desktop/stat390.nosync/STAT390_LegalAid_Fall2025/Internal work of Teams/Logan/avg_activities.csv")
 
-# clean all calls variable names
-all_calls_data <- all_calls_data %>% 
-  janitor::clean_names()
 
 
   
