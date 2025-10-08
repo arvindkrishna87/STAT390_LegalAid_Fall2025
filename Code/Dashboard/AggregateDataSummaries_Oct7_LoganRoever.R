@@ -3,6 +3,10 @@
 # load packages and data
 library(tidyverse)
 
+## USER INPUT REQUIRED -- put path on local computer
+car_data <- read_csv(file = "/Users/loganroever/Desktop/stat390.nosync/STAT390_LegalAid_Fall2025/Internal work of Teams/Logan/car_data.csv" )
+all_calls_data <- read_csv(file = "/Users/loganroever/Desktop/stat390.nosync/STAT390_LegalAid_Fall2025/Internal work of Teams/Logan/all_calls_data.csv" )
+
 # clean variable names
 car_data <- car_data %>% 
   janitor::clean_names()
@@ -20,7 +24,9 @@ chosen_ids <- car_data %>%
   filter(n_entries >= 10, n_entries <= 75)
 
 # join ids back to original data
+
 avg_activities <- car_data %>% 
+  semi_join(chosen_ids, by = "contact_session_id") %>% 
   group_by(activity_name) %>% 
   summarize(
     total = n(),
