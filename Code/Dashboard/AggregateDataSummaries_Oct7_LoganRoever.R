@@ -24,7 +24,9 @@ chosen_ids <- car_data %>%
   filter(n_entries >= 10, n_entries <= 75)
 
 # join ids back to original data
+
 avg_activities <- car_data %>% 
+  semi_join(chosen_ids, by = "contact_session_id") %>% 
   group_by(activity_name) %>% 
   summarize(
     total = n(),
