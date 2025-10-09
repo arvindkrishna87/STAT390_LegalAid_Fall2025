@@ -9,7 +9,8 @@ library(lubridate)
 
 #upload data----------------
 file_path <- 'data/CAR/'
-file_list <- list.files(path = file_path, pattern = "\\.xlsx$", full.names = TRUE)
+file_list <- list.files(path = file_path, pattern = "\\.xlsx|.csv$", full.names = TRUE)
+
 
 #create the month/year column--------------
 extract_month_year <- function(filename) {
@@ -22,10 +23,14 @@ extract_month_year <- function(filename) {
 }
 
 read_and_tag <- function(file) {
-  df <- read_excel(file, skip = 2) 
-  df$month_year <- extract_month_year(file)
-  return(df)
-}
+  if (str_ends(file, "\\.xlsx$")) {
+    df <- read_excel(file, skip = 2)
+  } else if (str_ends(file, "\\.csv$")) {
+    df <- read_csv(file, skip = 1, show_col_types = FALSE)
+  } else {
+    stop("Unsupported file type: ", file)
+  }
+  return(df)}
 
 combined_data <- map_dfr(file_list, read_and_tag)
 

@@ -8,7 +8,7 @@ library(lubridate)
 
 # read in data
 all_calls <- read_csv('data/combined_All_Call.csv')
-car <- read_csv('data/combined_data.csv')
+car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 
 all_calls <-
 all_calls |> janitor::clean_names() |>
@@ -17,9 +17,6 @@ all_calls |> janitor::clean_names() |>
          year = year(report_time),
          month_year = paste0(month, ' ', year),
          ) 
-
-car <-
-car |> janitor::clean_names()
 
 # filter out 0 second calls in all calls and grab inbound calls only
 calls_by_month_all <-
@@ -36,6 +33,11 @@ all_calls |>
 # get calls by month/year with CAR
 calls_by_month_car <-
 car |>
+  mutate(activity_start_timestamp = with_tz(activity_start_timestamp, tzone = 'America/Chicago'),
+         month = month(activity_start_timestamp, label = TRUE, abbr = FALSE),
+         year = year(activity_start_timestamp),
+         month_year = paste0(month, ' ', year),
+  ) |>
   distinct(contact_session_id, .keep_all = TRUE) |>
   summarize(
     .by = month_year,
@@ -57,9 +59,10 @@ month_comp_data <-
 inner_join(calls_by_month_car, calls_by_month_all, by = join_by(month_year)) |>
   mutate(month_year = factor(month_year, levels =
                                c('April 2024', 'May 2024', 'June 2024', 'July 2024',
-                                 'August 2024', 'September 2024', 'October 2024', 'November 2024',
-                                 'December 2024', 'January 2025', 'February 2025',
-                                 'March 2025'))) |>
+                                 'August 2024', 'September 2024', 'October 2024',
+                                 'November 2024', 'December 2024', 'January 2025',
+                                 'February 2025', 'March 2025', 'April 2025', 'May 2025',
+                                 'June 2025', 'July 2025', 'August 2025'))) |>
   rename(CAR = n.x, `All Calls` = n.y) |>
   pivot_longer(
     cols = c(CAR, `All Calls`),
