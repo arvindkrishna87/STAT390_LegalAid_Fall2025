@@ -1,0 +1,9 @@
+The CAR data will show all calls that traversed Webex Contact Center, meaning we’ll have inbound:
+
+Farmworker main number calls (312-431-2299)
+Legal Aid main number calls (312-341-1070)
+Transfers to the English main menu (312-506-8646)
+Transfers to the Spanish main menu (312-506-8647)
+Old ADAPT number calls that route to the Legal Aid main menu (312-229-6080)
+Old Benefits Enrollment number calls that route to the Legal Aid main menu (312-347-8342)
+Inbound calls at these numbers should match the inbound calls at these numbers in All Calls dataset.
