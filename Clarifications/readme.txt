@@ -1,0 +1,1 @@
+This folder consists of any clarifications coming from Cynthia or her team
