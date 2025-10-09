@@ -1,13 +1,11 @@
-# Load required libraries
+# load required libraries
 library(tidyverse)
-library(readxl)   # for reading Excel files
-library(lubridate) # for working with dates
 
-# ---- USER INPUT ----
+# USER INPUT REQUIRED -- write local path here
 data_path <- "/Users/loganroever/Desktop/stat390.nosync/calls_data/All Calls by Month"
 # --------------------
 
-# ---- 1. Get all CSV and XLSX files ----
+# Get all CSV and XLSX files
 files <- list.files(path = data_path, pattern = "\\.(csv|xlsx)$", full.names = TRUE) %>%
   sort()
 
@@ -25,14 +23,14 @@ walk2(peek_list, seq_along(peek_list), function(df, i) {
   cat(i - 1, basename(files[i]), "->", paste(dim(df), collapse = " x "), "\n")
 })
 
-# ---- 3. Find common and missing columns ----
+# Find common and missing columns ----
 # Get all column names for each file
 col_list <- map(peek_list, names)
 
-# Columns present in all files (intersection)
+# find columns present in all files (intersection)
 common_cols <- reduce(col_list, intersect)
 
-# Columns missing in some files (union minus intersection)
+# find columns missing in some files (union minus intersection)
 all_cols <- reduce(col_list, union)
 not_in_all <- setdiff(all_cols, common_cols)
 
@@ -42,7 +40,7 @@ print(not_in_all)
 cat("Columns present in all dataframes:\n")
 print(common_cols)
 
-# ---- 4. Read all data files using only common columns ----
+# Read all data files using only common columns ----
 
 all_calls_data <- map_dfr(files, function(f) {
   if (str_detect(f, "\\.csv$")) {
@@ -54,9 +52,9 @@ all_calls_data <- map_dfr(files, function(f) {
   }
 }, .id = "file_id")  
 
-# Now convert Start time to datetime
+# convert Start time to datetime
 all_calls_data <- all_calls_data %>%
   mutate(`Start time` = ymd_hms(`Start time`, tz = "UTC"))
 
-# ---- 6. Quick check ----
+# Quick check ----
 glimpse(all_calls_data)

@@ -1,18 +1,16 @@
-# ---- Libraries ----
+# load in libraries 
 library(tidyverse)
-library(readxl)      # for reading Excel files
-library(lubridate)   # for date-time parsing
-library(janitor)     # optional: for clean_names()
 
 
+## USER INPUT REQUIRED -- write local path here
 data_path <- "/Users/loganroever/Desktop/stat390.nosync/calls_data/CAR_-_EP_Flow_Activity_Queue__Agent_Names"
 # --------------------
 
-# ---- 1. Get all CSV and XLSX files ----
+# Get all CSV and XLSX files 
 files <- list.files(path = data_path, pattern = "\\.(csv|xlsx)$", full.names = TRUE) %>%
   sort()
 
-# ---- 2. Predefine column names ----
+# Define column names ----
 
 desired_cols <- c(
   "Contact Session ID",
@@ -25,13 +23,13 @@ desired_cols <- c(
   "Termination Reason"
 )
 
-# ---- 3. Read and combine all files ----
+# Read and combine all files ----
 # The first 2 rows are blank, so skip = 2
 car_data <- map_dfr(files, function(f) {
   
   if (str_detect(f, "\\.csv$")) {
     df <- read_csv(f,
-                   skip = 2,                     # skip first two rows
+                   skip = 2,                     
                    col_types = cols(.default = "c"),
                    show_col_types = FALSE)
   } else {
@@ -42,10 +40,9 @@ car_data <- map_dfr(files, function(f) {
   df %>%
     select(any_of(desired_cols))
   
-}, .id = "file_id")   # optional: keeps track of source file
+}, .id = "file_id")   # keep track of source file
 
-# ---- 4. Parse "Activity Start Timestamp" as datetime ----
-# Example format: "2025/03/02 02:15:34 PM"
+# Parse "Activity Start Timestamp" as datetime --
 car_data <- car_data %>%
   mutate(
     `Activity Start Timestamp` =
@@ -54,9 +51,9 @@ car_data <- car_data %>%
                       tz = "UTC")
   )
 
-# ---- 5. Create an hour column for peak calling analysis ----
+# Create an hour column for peak calling analysis ----
 car_data <- car_data %>%
   mutate(hour = hour(`Activity Start Timestamp`))
 
-# ---- 6. Quick structure check ----
+# Quick structure check ----
 glimpse(car_data)
