@@ -6,7 +6,8 @@
 library(tidyverse)
 library(lubridate)
 
-# read in data
+# read in data (reading from wd in repo but dataset in gitignore)
+# all calls read in ipynb by Vivienne and saved locally to Caroline's device for time's sake
 all_calls <- read_csv('data/combined_All_Call.csv')
 car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 
@@ -19,11 +20,25 @@ all_calls |> janitor::clean_names() |>
          ) 
 
 # filter out 0 second calls in all calls and grab inbound calls only
+# edit 10/12: filter to keep only 6 phone lines
+  # 312-431-2299
+  # 312-341-1070
+  # 312-506-8646
+  # 312-506-8647
+  # 312-229-6080
+  # 312-347-8342
 calls_by_month_all <-
 all_calls |>
   filter(duration > 0, 
          direction == "TERMINATING",
-         pstn_vendor_name == 'CallTower') |>
+         pstn_vendor_name == 'CallTower',
+         called_number %in% c('13124312299',
+                              '13123411070',
+                              '13125068646',
+                              '13125068647',
+                              '13122296080',
+                              '13123478342')
+         ) |>
   distinct(correlation_id, .keep_all = TRUE) |>
   summarize(
     .by = month_year,
