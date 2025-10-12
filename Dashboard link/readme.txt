@@ -1,0 +1,1 @@
+This folder is for dashboard teams to share link of their dashboard. If you are using power BI desktop, share the link of the *.pbix file stored on OneDrive or GoogleDrive. The naming convention for all files in this folder will be <DashboardTitle>_<date>_<nameofperson>. For example, ClosedCallsTimeTrend_23Oct_John

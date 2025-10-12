@@ -1,0 +1,93 @@
+---
+title: "STAT 390"
+format: html
+editor: visual
+---
+
+## Presentation 1
+
+```{r}
+#| message: false
+library(tidyverse)
+library(writexl)
+library(janitor)
+library(readxl)
+library(knitr)
+
+lms <- read_excel("/Users/meeratrivedi/Downloads/STAT 390/legal_menu_summary.xlsx")
+
+lms %>% 
+  kable()
+```
+
+### Legal Menu Option
+
+**Redundancies**: Legal and Other Legal?
+
+```{r}
+lms %>% 
+  group_by(legal_menu_option) %>% 
+  summarize(sum_calls = sum(total_calls)) %>% 
+  kable()
+```
+
+### Menu Selection
+
+Why are there separate queues for the same transfer? 
+
+- Housing >> **From Housing to Clinics** >> Clinic Voicemail Transfer
+- Family >> **From Simple Divorce to Clinics** >> Clinic Voicemail Transfer
+- Other Legal >> **Other Legal Issues Clinic** >> Clinic Voicemail Transfer
+
+Is there a way to get all of these people straight to Clinic Voicemail without three separate transfer categories? Can they all be put in the same queue if they are receiving the same clinic voicemail?
+
+**Redundancies**:
+
+- Housing Other vs All Other Issues
+- Immigration Other vs All Other Issues
+
+```{r}
+#| warning: false
+lms %>% 
+  filter(menu_selection != "N/A") %>% 
+  group_by(legal_menu_option, menu_selection) %>% 
+  summarize(sum_calls = sum(total_calls)) %>% 
+  arrange(legal_menu_option, desc(sum_calls)) %>% 
+  kable()
+```
+### Queue Selection
+
+Is each subsequent column a different stage of the call? If so, why do people go through these same categories at multiple stages? 
+
+- ADAPT
+- Consumer
+- Education
+- All Subsenior Categories
+
+
+```{r}
+#| warning: false
+lms %>% 
+  filter(first_queue_name != "N/A") %>% 
+  group_by(queue_selection, group_suboption) %>% 
+  summarize(sum_calls = sum(total_calls)) %>%
+  arrange(queue_selection, group_suboption) %>% 
+  kable()
+```
+
+## Subseniors
+
+**Redundancies**: Title switch between `group_suboption` and `first_queue_name`. 
+
+```{r}
+#| warning: false
+lms %>% 
+  filter(legal_menu_option == "Pre-Legal Seniors", 
+         queue_selection != "ADAPT", 
+         queue_selection != "N/A", 
+         first_queue_name != "N/A", 
+         first_queue_name != "Clinic Voicemail Transfer") %>% 
+  select(queue_selection, group_suboption, first_queue_name, final_queue_name, total_calls) %>% 
+  kable()
+```
+
