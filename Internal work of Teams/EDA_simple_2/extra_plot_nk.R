@@ -55,7 +55,6 @@ ggplot(hour_share, aes(hour, pct, color = dataset)) +
   scale_y_continuous(labels = percent_format(accuracy = 1)) +
   labs(
     title = "Hourly Share of Inbound Calls",
-    subtitle = "Each line shows distribution within dataset (6 filtered lines)",
     x = "Hour of Day (24-hour)",
     y = "Share of Calls",
     color = "Dataset"
