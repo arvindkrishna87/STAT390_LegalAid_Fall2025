@@ -10,17 +10,19 @@ library(janitor)
 all_calls <- read_csv("data/combined_All_Call.csv") |> clean_names()
 car <- read_csv("data/combined_data.csv") |> clean_names()
 
-# --- Define six phone lines ---
+# --- Define six phone lines and timezone ---
 six_lines <- c("13124312299",
                "13123411070",
                "13125068646",
                "13125068647",
                "13122296080",
                "13123478342")
+tz_local <- "America/Chicago"
 
 # --- Filter & summarize All Calls ---
 calls_by_hour_all <-
   all_calls %>%
+  mutate(report_time = with_tz(as_datetime(report_time, tz = "UTC"), tzone = "America/Chicago")) %>%
   filter(duration > 0,
          direction == "TERMINATING",
          pstn_vendor_name == "CallTower",
