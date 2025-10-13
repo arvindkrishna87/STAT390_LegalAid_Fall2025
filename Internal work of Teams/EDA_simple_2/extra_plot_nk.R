@@ -18,7 +18,7 @@ six_lines <- c("13124312299", "13123411070", "13125068646",
 # --- Prepare All Calls dataset ---
 calls_by_hour_all <-
   all_calls |>
-  mutate(report_time = with_tz(as_datetime(report_time, tz = "UTC"), tzone = tz_local)) |>
+  mutate(report_time = with_tz(as_datetime(report_time, tz = "UTC"), tzone = "America/Chicago")) |>
   filter(duration > 0,
          direction == "TERMINATING",
          pstn_vendor_name == "CallTower",
@@ -28,10 +28,10 @@ calls_by_hour_all <-
   count(hour, name = "n") |>
   mutate(dataset = "All Calls")
 
-# --- Prepare CAR dataset ---
+# --- CAR (already local, no tz conversion) ---
 calls_by_hour_car <-
   car |>
-  mutate(activity_start_timestamp = with_tz(as_datetime(activity_start_timestamp, tz = "UTC"), tzone = tz_local),
+  mutate(activity_start_timestamp = as_datetime(activity_start_timestamp),  # no need for timezone correction
          hour = hour(activity_start_timestamp)) |>
   distinct(contact_session_id, .keep_all = TRUE) |>
   count(hour, name = "n") |>
