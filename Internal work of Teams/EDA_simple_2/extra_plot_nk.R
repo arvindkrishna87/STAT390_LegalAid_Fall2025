@@ -3,57 +3,112 @@ library(readr)
 library(dplyr)
 library(lubridate)
 library(ggplot2)
-library(janitor)
 library(scales)
+library(janitor)
 
 # --- Read & clean data ---
 all_calls <- read_csv("data/combined_All_Call.csv") |> clean_names()
 car <- read_csv("data/combined_data.csv") |> clean_names()
 
-# --- Define constants ---
-tz_local <- "America/Chicago"
-six_lines <- c("13124312299", "13123411070", "13125068646",
-               "13125068647", "13122296080", "13123478342")
+# --- Define six phone lines ---
+six_lines <- c("13124312299",
+               "13123411070",
+               "13125068646",
+               "13125068647",
+               "13122296080",
+               "13123478342")
 
-# --- Prepare All Calls dataset ---
+# --- Filter & summarize All Calls ---
 calls_by_hour_all <-
-  all_calls |>
-  mutate(report_time = with_tz(as_datetime(report_time, tz = "UTC"), tzone = "America/Chicago")) |>
+  all_calls %>%
   filter(duration > 0,
          direction == "TERMINATING",
          pstn_vendor_name == "CallTower",
-         called_number %in% six_lines) |>
-  distinct(correlation_id, .keep_all = TRUE) |>
-  mutate(hour = hour(report_time)) |>
-  count(hour, name = "n") |>
+         called_number %in% six_lines) %>%
+  distinct(correlation_id, .keep_all = TRUE) %>%
+  mutate(hour = hour(ymd_hms(report_time))) %>%
+  count(hour, name = "n") %>%
   mutate(dataset = "All Calls")
 
-# --- CAR (already local, no tz conversion) ---
+# --- Summarize CAR (no tz conversion, to keep consistent) ---
 calls_by_hour_car <-
-  car |>
-  mutate(activity_start_timestamp = as_datetime(activity_start_timestamp),  # no need for timezone correction
-         hour = hour(activity_start_timestamp)) |>
-  distinct(contact_session_id, .keep_all = TRUE) |>
-  count(hour, name = "n") |>
+  car %>%
+  distinct(contact_session_id, .keep_all = TRUE) %>%
+  mutate(hour = hour(ymd_hms(activity_start_timestamp))) %>%
+  count(hour, name = "n") %>%
   mutate(dataset = "CAR")
 
-# --- Combine datasets ---
-calls_by_hour <- bind_rows(calls_by_hour_all, calls_by_hour_car)
+# --- Combine & compute share ---
+hour_share <-
+  bind_rows(calls_by_hour_all, calls_by_hour_car) %>%
+  group_by(dataset) %>%
+  mutate(pct = n / sum(n)) %>%
+  ungroup()
 
-# --- Plot ---
-ggplot(calls_by_hour, aes(x = hour, y = n, color = dataset)) +
+# --- Plot: Hourly Share ---
+ggplot(hour_share, aes(hour, pct, color = dataset)) +
   geom_line(linewidth = 1.2) +
   geom_point(size = 2) +
   scale_x_continuous(breaks = 0:23) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
   labs(
-    title = "Calls by Hour of Day (Activity Pattern)",
-    x = "Hour of Day (24-hour, America/Chicago)",
-    y = "Number of Inbound Calls",
+    title = "Hourly Share of Inbound Calls",
+    subtitle = "Each line shows distribution within dataset (6 filtered lines)",
+    x = "Hour of Day (24-hour)",
+    y = "Share of Calls",
     color = "Dataset"
   ) +
   theme_minimal(base_size = 13) +
-  theme(legend.position = "top",
-        panel.grid.minor = element_blank())
+  theme(legend.position = "top", panel.grid.minor = element_blank())
+
+# # --- Read & clean data ---
+# all_calls <- read_csv("data/combined_All_Call.csv") |> clean_names()
+# car <- read_csv("data/combined_data.csv") |> clean_names()
+# 
+# # --- Define constants ---
+# tz_local <- "America/Chicago"
+# six_lines <- c("13124312299", "13123411070", "13125068646",
+#                "13125068647", "13122296080", "13123478342")
+# 
+# # --- Prepare All Calls dataset ---
+# calls_by_hour_all <-
+#   all_calls |>
+#   mutate(report_time = with_tz(as_datetime(report_time, tz = "UTC"), tzone = "America/Chicago")) |>
+#   filter(duration > 0,
+#          direction == "TERMINATING",
+#          pstn_vendor_name == "CallTower",
+#          called_number %in% six_lines) |>
+#   distinct(correlation_id, .keep_all = TRUE) |>
+#   mutate(hour = hour(report_time)) |>
+#   count(hour, name = "n") |>
+#   mutate(dataset = "All Calls")
+# 
+# # --- CAR (already local, no tz conversion) ---
+# calls_by_hour_car <-
+#   car |>
+#   mutate(activity_start_timestamp = as_datetime(activity_start_timestamp),  # no need for timezone correction
+#          hour = hour(activity_start_timestamp)) |>
+#   distinct(contact_session_id, .keep_all = TRUE) |>
+#   count(hour, name = "n") |>
+#   mutate(dataset = "CAR")
+# 
+# # --- Combine datasets ---
+# calls_by_hour <- bind_rows(calls_by_hour_all, calls_by_hour_car)
+# 
+# # --- Plot ---
+# ggplot(calls_by_hour, aes(x = hour, y = n, color = dataset)) +
+#   geom_line(linewidth = 1.2) +
+#   geom_point(size = 2) +
+#   scale_x_continuous(breaks = 0:23) +
+#   labs(
+#     title = "Calls by Hour of Day (Activity Pattern)",
+#     x = "Hour of Day (24-hour, America/Chicago)",
+#     y = "Number of Inbound Calls",
+#     color = "Dataset"
+#   ) +
+#   theme_minimal(base_size = 13) +
+#   theme(legend.position = "top",
+#         panel.grid.minor = element_blank())
 
 # library(ggplot2)
 # library(dplyr)
