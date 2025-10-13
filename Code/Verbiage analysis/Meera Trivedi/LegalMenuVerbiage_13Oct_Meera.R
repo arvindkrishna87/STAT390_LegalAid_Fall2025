@@ -6,7 +6,7 @@ library(janitor)
 library(readxl)
 
 #MY QMD FILE HAS THE CODE AND CLEANER REPORT OF RESULTS. 
-#THIS IS JUST MY ROUGH WORK  
+#THIS IS JUST THE DATA CLEANING AND MY ROUGH WORK  
 
 allcalls825 <- read_excel("/Users/meeratrivedi/Downloads/STAT 390
 /August 2025.xlsx")
