@@ -65,4 +65,3 @@ ggplot(hour_share, aes(hour, pct, color = dataset)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "top", panel.grid.minor = element_blank())
 
-
