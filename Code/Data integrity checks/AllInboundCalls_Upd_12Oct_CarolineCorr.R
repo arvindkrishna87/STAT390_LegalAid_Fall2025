@@ -8,16 +8,24 @@ library(lubridate)
 
 # read in data (reading from wd in repo but dataset in gitignore)
 # all calls read in ipynb by Vivienne and saved locally to Caroline's device for time's sake
+
+# attempts to import data from OneDrive
+# data_path <- "C:\\Users\\akl0407\\OneDrive - Northwestern University\\Back up\\2025-26\\Spring 2025\\STAT390\\LegalAid\\Data\\All Calls by Month"
+# all_calls <- read_csv(file.path(data_path, "combined_All_Call.csv"))
+
 all_calls <- read_csv('data/combined_All_Call.csv')
 car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 
 all_calls <-
 all_calls |> janitor::clean_names() |>
-  mutate(report_time = with_tz(report_time, tzone = 'America/Chicago'),
-         month = month(report_time, label = TRUE, abbr = FALSE),
-         year = year(report_time),
-         month_year = paste0(month, ' ', year),
-         ) 
+  mutate(
+    # with_tz function automatically handles daylight saving time adjustments
+    report_time = with_tz(report_time, tzone = 'America/Chicago'),
+    month = month(report_time, label = TRUE, abbr = FALSE),
+    year = year(report_time),
+    # create month_year to join and compare between tables
+    month_year = paste0(month, ' ', year)
+    ) 
 
 # filter out 0 second calls in all calls and grab inbound calls only
 # edit 10/12: filter to keep only 6 phone lines
@@ -48,10 +56,13 @@ all_calls |>
 # get calls by month/year with CAR
 calls_by_month_car <-
 car |>
-  mutate(activity_start_timestamp = with_tz(activity_start_timestamp, tzone = 'America/Chicago'),
-         month = month(activity_start_timestamp, label = TRUE, abbr = FALSE),
-         year = year(activity_start_timestamp),
-         month_year = paste0(month, ' ', year),
+  mutate(
+    # with_tz function automatically handles daylight saving time adjustments
+    activity_start_timestamp = with_tz(activity_start_timestamp, tzone = 'America/Chicago'),
+    month = month(activity_start_timestamp, label = TRUE, abbr = FALSE),
+    year = year(activity_start_timestamp),
+    # create month_year to join and compare between tables
+    month_year = paste0(month, ' ', year)
   ) |>
   distinct(contact_session_id, .keep_all = TRUE) |>
   summarize(
