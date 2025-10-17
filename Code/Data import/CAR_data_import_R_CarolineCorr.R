@@ -2,9 +2,7 @@
 
 #load packages-------------
 library(readxl)
-library(dplyr)
-library(stringr)
-library(purrr)
+library(tidyverse)
 library(lubridate)
 
 #upload data----------------
