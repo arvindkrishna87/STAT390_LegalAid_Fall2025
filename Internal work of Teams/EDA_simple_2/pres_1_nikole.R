@@ -8,7 +8,7 @@ library(scales)
 library(janitor)
 
 # Reading & cleaning data
-# read in datasets (see data import scripts for combined datasets, which is under Data import folder in the Code folder in Github) 
+# To read the combined datasets, see the data import scripts in the "Data import" folder within the "Code" folder on GitHub
 all_calls <- read_csv("data/combined_All_Call.csv") |> clean_names()
 car <- read_csv("data/combined_data.csv") |> clean_names()
 
