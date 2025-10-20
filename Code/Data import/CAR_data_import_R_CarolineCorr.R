@@ -7,7 +7,7 @@ library(lubridate)
 
 #upload data----------------
 file_path <- 'data/CAR/'
-file_list <- list.files(path = file_path, pattern = "\\.xlsx|.csv$", full.names = TRUE)
+file_list <- list.files(path = file_path, pattern = "\\.xlsx$|\\.csv$", full.names = TRUE)
 
 
 #create the month/year column--------------
