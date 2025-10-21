@@ -116,7 +116,8 @@ month_comp_data |>
     title = 'Inbound Call Counts: Comparison May \'24 to September \'25',
     x = 'Month',
     y = 'Number of Inbound Calls',
-    color = 'Dataset'
+    color = 'Dataset',
+    caption = 'All Calls filtered with Krish\'s Recommendation'
   )
 
 ggsave(month_comp_graph, 'graphics/month_comp_graph.png')
