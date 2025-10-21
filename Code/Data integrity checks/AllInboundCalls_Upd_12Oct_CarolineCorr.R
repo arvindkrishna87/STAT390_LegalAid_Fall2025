@@ -8,16 +8,24 @@ library(lubridate)
 
 # read in data (reading from wd in repo but dataset in gitignore)
 # all calls read in ipynb by Vivienne and saved locally to Caroline's device for time's sake
-all_calls <- read_csv('data/combined_All_Call.csv')
+
+# attempts to import data from OneDrive
+# data_path <- "C:\\Users\\akl0407\\OneDrive - Northwestern University\\Back up\\2025-26\\Spring 2025\\STAT390\\LegalAid\\Data\\All Calls by Month"
+# all_calls <- read_csv(file.path(data_path, "combined_All_Call.csv"))
+
+all_calls <- read_csv('data/all_calls.csv') |> janitor::clean_names()
 car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 
 all_calls <-
-all_calls |> janitor::clean_names() |>
-  mutate(report_time = with_tz(report_time, tzone = 'America/Chicago'),
-         month = month(report_time, label = TRUE, abbr = FALSE),
-         year = year(report_time),
-         month_year = paste0(month, ' ', year),
-         ) 
+all_calls |>
+  mutate(
+    # with_tz function automatically handles daylight saving time adjustments
+    report_time = with_tz(start_time, tzone = 'America/Chicago'),
+    month = month(start_time, label = TRUE, abbr = FALSE),
+    year = year(start_time),
+    # create month_year to join and compare between tables
+    month_year = paste0(month, ' ', year)
+    ) 
 
 # filter out 0 second calls in all calls and grab inbound calls only
 # edit 10/12: filter to keep only 6 phone lines
@@ -48,10 +56,13 @@ all_calls |>
 # get calls by month/year with CAR
 calls_by_month_car <-
 car |>
-  mutate(activity_start_timestamp = with_tz(activity_start_timestamp, tzone = 'America/Chicago'),
-         month = month(activity_start_timestamp, label = TRUE, abbr = FALSE),
-         year = year(activity_start_timestamp),
-         month_year = paste0(month, ' ', year),
+  mutate(
+    # with_tz function automatically handles daylight saving time adjustments
+    activity_start_timestamp = with_tz(activity_start_timestamp, tzone = 'America/Chicago'),
+    month = month(activity_start_timestamp, label = TRUE, abbr = FALSE),
+    year = year(activity_start_timestamp),
+    # create month_year to join and compare between tables
+    month_year = paste0(month, ' ', year)
   ) |>
   distinct(contact_session_id, .keep_all = TRUE) |>
   summarize(
@@ -77,7 +88,7 @@ inner_join(calls_by_month_car, calls_by_month_all, by = join_by(month_year)) |>
                                  'August 2024', 'September 2024', 'October 2024',
                                  'November 2024', 'December 2024', 'January 2025',
                                  'February 2025', 'March 2025', 'April 2025', 'May 2025',
-                                 'June 2025', 'July 2025', 'August 2025'))) |>
+                                 'June 2025', 'July 2025', 'August 2025', 'September 2025'))) |>
   rename(CAR = n.x, `All Calls` = n.y) |>
   pivot_longer(
     cols = c(CAR, `All Calls`),
@@ -94,6 +105,18 @@ month_comp_data |>
     x = 'Number of Inbound Calls',
     y = 'Month',
     fill = 'Dataset'
+  )
+
+month_comp_data |>
+  ggplot(aes(month_year, count, color = dataset, group = dataset)) +
+  geom_line(linewidth = 1) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  labs(
+    title = 'Inbound Call Counts: Comparison May \'24 to September \'25',
+    x = 'Month',
+    y = 'Number of Inbound Calls',
+    color = 'Dataset'
   )
 
 ggsave(month_comp_graph, 'graphics/month_comp_graph.png')
