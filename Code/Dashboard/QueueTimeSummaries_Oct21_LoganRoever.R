@@ -58,12 +58,14 @@ queued_clients <- time_results_df %>%
   summarize(across(everything(), first), .groups = "drop")
 
 
-# make month and year columns
+# make month, year, open hours columns and change time to minutes for understanding purposes
 queued_clients <- queued_clients %>%
   mutate(month = month(activity_start_timestamp),
          year = year(activity_start_timestamp),
          open_hour = if_else(hour >= 8 & hour <= 17, "Open", "Closed"),
-         month_name = month.name[month]
+         month_name = month.name[month],
+         avg_time_in_queue_min = avg_time_in_queue_sec / 60,
+         total_time_in_queue_min = total_time_in_queue_sec / 60
          )
 
 # save dataset
