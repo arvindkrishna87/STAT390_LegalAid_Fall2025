@@ -61,7 +61,9 @@ queued_clients <- time_results_df %>%
 # make month and year columns
 queued_clients <- queued_clients %>%
   mutate(month = month(activity_start_timestamp),
-         year = year(activity_start_timestamp)
+         year = year(activity_start_timestamp),
+         open_hour = if_else(hour >= 8 & hour <= 17, "Open", "Closed"),
+         month_name = month.name[month]
          )
 
 # save dataset
