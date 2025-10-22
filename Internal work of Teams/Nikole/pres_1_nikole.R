@@ -8,8 +8,8 @@ library(scales)
 library(janitor)
 
 # Reading datasets (Requires accessing Github)
-## To read the CAR dataset, please refer to my import code on this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_CAR_Nikole.R
-## To read in the All Calls dataset, please refer to the import code in this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_AllCallsData_Nikole.ipynb
+## To read the CAR dataset, please refer to my import code on this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/CarDataImport_Oct21st_Nikole.R
+## To read in the All Calls dataset, please refer to the import code in this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/AllCallsDataImport_Oct21st_Nikole.ipynb
 all_calls <- read_csv("data/combined_All_Call.csv") |> clean_names()
 car <- read_csv("data/car.csv") |> clean_names()
 
