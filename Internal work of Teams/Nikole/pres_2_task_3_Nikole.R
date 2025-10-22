@@ -10,11 +10,11 @@ library(plotly)
 library(htmlwidgets)
 
 # Reading datasets (Requires accessing Github)
-# To read the CAR dataset, please refer to my import code on this link:
-# To read in the All Calls dataset, please refer to the import code in this link: 
+# To read the CAR dataset, please refer to my import code on this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_CAR_Nikole.R
+# To read in the All Calls dataset, please refer to the import code in this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_AllCallsData_Nikole.ipynb
 
 all_calls <- read_csv("data/combined_All_Call.csv") |> janitor::clean_names()
-car <- read_csv("data/combined_data.csv") |> janitor::clean_names()
+car <- read_csv("data/car.csv") |> janitor::clean_names()
 
 # Task 3:  how many callers actually self-terminate (abandon?) after listening to the pre-tenant menu.
 # If most of them continue through to the next set of tenant options, 
