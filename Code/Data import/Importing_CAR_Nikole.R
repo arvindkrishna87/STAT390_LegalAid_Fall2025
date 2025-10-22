@@ -58,4 +58,4 @@ car_data <- car_data %>%
 glimpse(car_data)
 
 # Saving the file on destokp -- You should replace the path with the one you want to have the csv dataset saved in
-write.csv(car_data, file = 'data/car.csv')
+write.csv(car_data, file = 'data/car.csv', row.names = FALSE)
