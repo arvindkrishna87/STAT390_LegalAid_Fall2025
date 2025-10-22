@@ -4,7 +4,12 @@
 library(tidyverse)
 library(lubridate)
 
-# read in combined datasets (see separate import scripts for creation)
+# read in data
+# note for reproducibility: 
+# CAR data synthesized through CAR_data_import_R_CarolineCorr.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/CAR_data_import_R_CarolineCorr.R
+# All Calls data synthesized through allcallsimport_Oct7_LoganRoever.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/allcallsimport_Oct7_LoganRoever.R
 car <- read_csv('data/combined_CAR.csv') |> janitor::clean_names()
 all_calls <- read_csv('data/combined_All_Call.csv') |> janitor::clean_names()
 

@@ -6,13 +6,12 @@
 library(tidyverse)
 library(lubridate)
 
-# read in data (reading from wd in repo but dataset in gitignore)
-# all calls read in ipynb by Vivienne and saved locally to Caroline's device for time's sake
-
-# attempts to import data from OneDrive
-# data_path <- "C:\\Users\\akl0407\\OneDrive - Northwestern University\\Back up\\2025-26\\Spring 2025\\STAT390\\LegalAid\\Data\\All Calls by Month"
-# all_calls <- read_csv(file.path(data_path, "combined_All_Call.csv"))
-
+# read in data
+# note for reproducibility: 
+# CAR data synthesized through CAR_data_import_R_CarolineCorr.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/CAR_data_import_R_CarolineCorr.R
+# All Calls data synthesized through allcallsimport_Oct7_LoganRoever.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/allcallsimport_Oct7_LoganRoever.R
 all_calls <- read_csv('data/all_calls.csv') |> janitor::clean_names()
 car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 

@@ -7,8 +7,10 @@ library(lubridate)
 
 # read in data
 # note for reproducibility: 
-# CAR data synthesized through CAR_data_import_R_CarolineCorr.R
-# All Calls data synthesized through allcallsimport_Oct7_LoganRoever.R
+# CAR data synthesized through CAR_data_import_R_CarolineCorr.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/CAR_data_import_R_CarolineCorr.R
+# All Calls data synthesized through allcallsimport_Oct7_LoganRoever.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/allcallsimport_Oct7_LoganRoever.R
 all_calls <- read_csv('data/all_calls.csv') |> janitor::clean_names()
 car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 
