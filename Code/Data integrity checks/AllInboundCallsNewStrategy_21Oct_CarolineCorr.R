@@ -1,6 +1,5 @@
-## Presentation 1 Task 1: "Compare the number of calls in the CAR data with 
-## the relevant Inbound calls in the All calls dataset. 
-## Visualize the number of calls vs calling hour in both cases"
+## Presentation 2, Task 1: Using Edwin Rong's strategy for filtering 
+## inbound calls in all calls dataset
 
 # libraries
 library(tidyverse)
@@ -15,8 +14,11 @@ library(lubridate)
 all_calls <- read_csv('data/all_calls.csv') |> janitor::clean_names()
 car <- read_csv('data/combined_data.csv') |> janitor::clean_names()
 
+# edit datasets for monthly inbound call comparison ----
+
+# overwrite all calls for correct timezone and separate out month/year columns
 all_calls <-
-all_calls |>
+  all_calls |>
   mutate(
     # with_tz function automatically handles daylight saving time adjustments
     report_time = with_tz(start_time, tzone = 'America/Chicago'),
@@ -24,20 +26,17 @@ all_calls |>
     year = year(start_time),
     # create month_year to join and compare between tables
     month_year = paste0(month, ' ', year)
-    ) 
+  ) 
 
-# filter out 0 second calls in all calls and grab inbound calls only
-# edit 10/12: filter to keep only 6 phone lines
-  # 312-431-2299
-  # 312-341-1070
-  # 312-506-8646
-  # 312-506-8647
-  # 312-229-6080
-  # 312-347-8342
+# grab all inbound calls from 6 phone lines using Edwin Rong's strategy (see documentation)
 calls_by_month_all <-
-all_calls |>
+  all_calls |>
   filter(duration > 0, 
+         is.na(inbound_trunk),
+         str_starts(outbound_trunk, 'wcc'),
          direction == "TERMINATING",
+         call_type == 'SIP_INBOUND',
+         client_type == 'WXCC',
          pstn_vendor_name == 'CallTower',
          called_number %in% c('13124312299',
                               '13123411070',
@@ -45,16 +44,16 @@ all_calls |>
                               '13125068647',
                               '13122296080',
                               '13123478342')
-         ) |>
+  ) |>
   distinct(correlation_id, .keep_all = TRUE) |>
   summarize(
     .by = month_year,
     n = n()
   )
-  
-# get calls by month/year with CAR
+
+# get calls by month/year from CAR
 calls_by_month_car <-
-car |>
+  car |>
   mutate(
     # with_tz function automatically handles daylight saving time adjustments
     activity_start_timestamp = with_tz(activity_start_timestamp, tzone = 'America/Chicago'),
@@ -69,19 +68,9 @@ car |>
     n = n()
   )
 
-# make table/plots
-month_comp <-
-inner_join(calls_by_month_car, calls_by_month_all, by = join_by(month_year)) |>
-  mutate(difference = n.x - n.y) |>
-  knitr::kable(
-    caption = 'Total Inbound Calls: Month by Month Comparison',
-    col.names = c('Month/Year', 'CAR Calls', 'All Calls', 'Difference')
-  )
-
-save(month_comp, file = 'graphics/month_comp.rda')
-
+# join month/year breakdowns for both datasets ----
 month_comp_data <-
-inner_join(calls_by_month_car, calls_by_month_all, by = join_by(month_year)) |>
+  inner_join(calls_by_month_car, calls_by_month_all, by = join_by(month_year)) |>
   mutate(month_year = factor(month_year, levels =
                                c('April 2024', 'May 2024', 'June 2024', 'July 2024',
                                  'August 2024', 'September 2024', 'October 2024',
@@ -95,17 +84,7 @@ inner_join(calls_by_month_car, calls_by_month_all, by = join_by(month_year)) |>
     values_to = 'count'
   ) 
 
-month_comp_graph <-
-month_comp_data |>
-  ggplot(aes(count, month_year, fill = dataset)) +
-  geom_col(position = 'dodge') +
-  labs(
-    title = 'Inbound Call Counts: Month-by-Month Comparison',
-    x = 'Number of Inbound Calls',
-    y = 'Month',
-    fill = 'Dataset'
-  )
-
+# plot comparison
 month_comp_data |>
   ggplot(aes(month_year, count, color = dataset, group = dataset)) +
   geom_line(linewidth = 1) +
@@ -116,7 +95,5 @@ month_comp_data |>
     x = 'Month',
     y = 'Number of Inbound Calls',
     color = 'Dataset',
-    caption = 'All Calls filtered with Krish\'s Recommendation'
+    caption = 'All Calls Filtered with Edwin Rong\'s Recommendation'
   )
-
-ggsave(month_comp_graph, 'graphics/month_comp_graph.png')
