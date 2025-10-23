@@ -6,8 +6,6 @@ library(tidyverse)
 library(lubridate)
 library(dplyr)
 library(ggplot2)
-library(plotly)
-library(htmlwidgets)
 
 # Reading datasets (Requires accessing Github)
 # To read the CAR dataset, please refer to my import code on this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_CAR_Nikole.R
