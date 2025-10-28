@@ -3,6 +3,8 @@ library(tidyverse)
 library(stringr)
 library(readr)
 library(tibble)
+install.packages("janitor")
+library(janitor)
 
 all_calls <- read_csv("all_calls.csv")
 glimpse(all_calls)
@@ -14,7 +16,7 @@ close_hr <- "17:00"
 
 # --- Step 2: Map number descriptions
 number_descriptions <- tribble(
-  ~`Called number`, ~Description,
+  ~called_number, ~description,
   "13123478300", "Internal voicemail - not client related",
   "13123411070", "Main number",
   "2302", "Staff Directory English Transfer",
@@ -69,43 +71,46 @@ number_descriptions <- tribble(
 
 # --- Step 3: Process & Aggregate Data
 presentation2_df <- all_calls |> 
+  # Clean column names
+  clean_names() |> 
+  
   # Select all the columns needed for the analysis
-  select('Correlation ID', 'Called number', 'Start time', 
-         'Duration', 'Direction', 'PSTN vendor name') |> 
+  select(correlation_id, called_number, start_time, 
+         duration, direction, pstn_vendor_name) |> 
   
   # Filter out NA rows, convert duration to minutes
-  mutate(`Called number` = as.character(`Called number`),
-         Duration_min = Duration / 60) |>
-  filter(!is.na(`Called number`)) |> 
+  mutate(called_number = as.character(called_number),
+         duration_min = duration / 60) |>
+  filter(!is.na(`called_number`)) |> 
   
   # Remove duplicate call logs
-  distinct(`Correlation ID`, `Called number`, .keep_all = TRUE) |>
-  distinct(`Correlation ID`, `Start time`, Duration, .keep_all = TRUE) |>
+  distinct(correlation_id, called_number, .keep_all = TRUE) |>
+  distinct(correlation_id, start_time, duration, .keep_all = TRUE) |>
   
   # --- Step 4: Create All Filter Columns ---
   mutate(
     
     # A. Create the 'Call_Path' column 
-    Call_Path = case_when(
-      is.na(`PSTN vendor name`) ~ "Internal",
-      !is.na(`PSTN vendor name`) & Direction == "TERMINATING" ~ "Inbound",
-      !is.na(`PSTN vendor name`) & Direction == "ORIGINATING" ~ "Outbound",
+    call_path = case_when(
+      is.na(pstn_vendor_name) ~ "Internal",
+      !is.na(pstn_vendor_name) & direction == "TERMINATING" ~ "Inbound",
+      !is.na(pstn_vendor_name) & direction == "ORIGINATING" ~ "Outbound",
       TRUE ~ "Other"
     ),
     
     # B. Create date column for the date slicer
-    Date = as.Date(`Start time`),
+    date = as.Date(start_time),
     
     # C. Create columns for weekend/weekday & open/closed hours slicers
-    Call_Hour = hour(`Start time`),
-    Call_Weekday = wday(`Start time`, label = TRUE, week_start = 1),
-    Weekday_Weekend = if_else(
-      Call_Weekday %in% c("Sat", "Sun"), 
+    call_hour = hour(start_time),
+    call_weekday = wday(start_time, label = TRUE, week_start = 1),
+    weekday_weekend = if_else(
+      call_weekday %in% c("Sat", "Sun"), 
       "Weekend", 
       "Weekday"
     ),
-    Open_Closed = if_else(
-      Call_Hour >= open_hr & Call_Hour < close_hr,
+    open_closed = if_else(
+      call_hour >= open_hr & call_hour < close_hr,
       "Open Hours",
       "Closed Hours"
     )
@@ -113,27 +118,26 @@ presentation2_df <- all_calls |>
   
   # --- Step 5: Join the Number Descriptions ---
   left_join(
-    number_descriptions |> 
-      mutate(`Called number` = as.character(`Called number`)), 
-    by = "Called number"
+    number_descriptions,
+    by = "called_number"
   ) |>
   mutate(
-    Description = coalesce(Description, `Called number`)
+    description = coalesce(description, called_number)
   ) |>
-
+  
   # --- Step 6: Final Cleaning ---
   # Reorder columns 
   select(
-    `Start time`,
-    Date,
-    Weekday_Weekend,
-    `Correlation ID`,
-    Open_Closed,
-    Call_Path,
-    `Called number`,
-    Description,
-    Duration,
-    Duration_min
+    start_time,
+    date,
+    weekday_weekend,
+    correlation_id,
+    open_closed,
+    call_path,
+    called_number,
+    description,
+    duration,
+    duration_min
   )
 
 # --- Step 7: Export to CSV ---
