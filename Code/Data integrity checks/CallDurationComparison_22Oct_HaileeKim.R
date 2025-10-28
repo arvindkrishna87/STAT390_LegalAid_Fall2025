@@ -1,0 +1,151 @@
+## Task 1: Consistency check for call durations after March 15, 2025 ----
+
+# load libraries 
+library(tidyverse)
+library(lubridate)
+
+# read in data
+# note for reproducibility: 
+# CAR data synthesized through CAR_data_import_R_CarolineCorr.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/CAR_data_import_R_CarolineCorr.R
+# All Calls data synthesized through allcallsimport_Oct7_LoganRoever.R:
+# https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/allcallsimport_Oct7_LoganRoever.R
+car <- read_csv('data/combined_CAR.csv') |> janitor::clean_names()
+all_calls <- read_csv('data/combined_All_Call.csv') |> janitor::clean_names()
+
+# filter CAR data to calls after March 15, 2025 ----
+car <- car |>
+  mutate(
+    activity_start_timestamp = ymd_hms(activity_start_timestamp),
+    hour = hour(activity_start_timestamp)
+  ) |>
+  filter(activity_start_timestamp >= '2025/03/16 00:00:00')
+
+# filter All Calls data to calls after March 15, 2025 ----
+
+# convert all timestamps to America/Chicago time zone for consistency
+all_calls <- all_calls |>
+  mutate(
+    report_time = with_tz(report_time, tzone = 'America/Chicago'),
+    release_time = with_tz(release_time, tzone = 'America/Chicago'),
+    hour = hour(report_time)) |>
+  filter(report_time >= '2025/03/16 00:00:00')
+
+# build duration variables for CAR ----
+car_durations <- car |>
+  summarize(
+    .by = contact_session_id,
+    start_time = min(activity_start_timestamp, na.rm = TRUE),
+    end_time   = max(activity_start_timestamp, na.rm = TRUE),
+    duration   = as.numeric(end_time - start_time, units = "secs")
+  ) |>
+  mutate(
+    # derive hour from start_time and end_time
+    start_hour = hour(start_time),
+    end_hour   = hour(end_time),
+    # use start hour before 17:00, otherwise use end hour (evening calls often span hours)
+    hour = if_else(start_hour < 17, start_hour, end_hour)
+  ) |>
+  mutate(duration = parse_number(as.character(duration)))
+
+# build duration variables for All Calls ----
+
+# define target numbers for All Calls data
+target_numbers <- c('13124312299','13123411070','13125068646','13125068647','13122296080','13123478342')
+
+all_calls_durations <-
+  all_calls |>
+  # get inbound calls only for comparison
+  filter(
+    duration > 0, 
+    direction == "TERMINATING",
+    pstn_vendor_name == 'CallTower',
+    called_number %in% target_numbers
+  ) |>
+  # keep one record per unique correlation ID + called number
+  distinct(correlation_id, called_number, .keep_all = TRUE) |>
+  mutate(
+    duration_release_time_answer_time = as.numeric(release_time - answer_time),
+    duration_release_time_start_time  = as.numeric(release_time - start_time),
+    hour = hour(report_time)
+  ) |>
+  select(
+    report_time,
+    start_time,
+    answer_time,
+    release_time,
+    duration,
+    duration_release_time_answer_time,
+    duration_release_time_start_time,
+    hour,
+    correlation_id,
+    called_number
+  )
+
+# combine CAR and All Calls datasets for comparison ----
+dur_by_hour_car <-
+  car_durations |>
+  summarize(
+    .by = hour,
+    median_duration = median(duration, na.rm = TRUE)
+  ) |>
+  mutate(dataset = "CAR")
+
+dur_by_hour_all_calls <-
+  all_calls_durations |>
+  summarize(
+    .by = hour,
+    median_duration = median(duration_release_time_answer_time, na.rm = TRUE)) |>
+  mutate(dataset = "All Calls")
+
+dur_by_hour <-
+  bind_rows(dur_by_hour_car, dur_by_hour_all_calls)
+
+# plot median duration by hour ----
+dur_by_hour_graph <- dur_by_hour |>
+  ggplot(aes(hour, median_duration, color = dataset)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  theme_bw(base_size = 13) +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.major = element_line(linewidth = 0.6),
+    panel.grid.minor = element_line(linewidth = 0.4),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 11)
+  ) +
+  labs(
+    title = "Median Call Duration by Hour",
+    subtitle = "Overlap between All Calls and CAR datasets",
+    x = "Hour of Day",
+    y = "Median Duration (seconds)"
+  )
+
+# save plot
+ggsave(
+  filename = "graphics/dur_by_hour_graph.png",
+  plot = dur_by_hour_graph,
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+
+# identify hour where CAR durations show sudden drop ----
+# used to determine the 17-hour threshold in line 42
+
+dur_by_hour_diff <- dur_by_hour |>
+  group_by(dataset) |>
+  arrange(hour) |>
+  mutate(
+    change = median_duration - lag(median_duration)
+  )
+
+# get the steepest negative change (plunge point)
+sudden_plunge <- dur_by_hour_diff |>
+  filter(!is.na(change)) |>
+  slice_min(change, n = 1)
+
+plunge_hour <- sudden_plunge$hour

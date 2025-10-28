@@ -1,5 +1,5 @@
 ### Making a plot - Calls by Hour of Day (Activity Pattern)
-## Uploading neccesary packages
+## Loading packages
 library(readr)
 library(dplyr)
 library(lubridate)
@@ -7,10 +7,11 @@ library(ggplot2)
 library(scales)
 library(janitor)
 
-# Reading & cleaning data
-# To read the combined datasets, see the data import scripts in the "Data import" folder within the "Code" folder on GitHub
+# Reading datasets (Requires accessing Github)
+## To read the CAR dataset, please refer to my import code on this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_CAR_Nikole.R
+## To read in the All Calls dataset, please refer to the import code in this link: https://github.com/arvindkrishna87/STAT390_LegalAid_Fall2025/blob/main/Code/Data%20import/Importing_AllCallsData_Nikole.ipynb
 all_calls <- read_csv("data/combined_All_Call.csv") |> clean_names()
-car <- read_csv("data/combined_data.csv") |> clean_names()
+car <- read_csv("data/car.csv") |> clean_names()
 
 # Defining six phone lines and timezone
 six_lines <- c("13124312299",
