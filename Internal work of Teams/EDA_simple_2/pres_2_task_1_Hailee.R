@@ -5,6 +5,7 @@ library(tidyverse)
 library(lubridate)
 
 # read in combined datasets (see separate import scripts for creation)
+# set a repository as Internal work of Teams/EDA_simple_2
 car <- read_csv('data/combined_CAR.csv') |> janitor::clean_names()
 all_calls <- read_csv('data/combined_All_Call.csv') |> janitor::clean_names()
 

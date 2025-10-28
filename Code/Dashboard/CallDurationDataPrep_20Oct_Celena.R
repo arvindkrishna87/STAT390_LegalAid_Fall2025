@@ -73,9 +73,10 @@ presentation2_df <- all_calls |>
   select('Correlation ID', 'Called number', 'Start time', 
          'Duration', 'Direction', 'PSTN vendor name') |> 
   
-  # Filter out NA rows
-  mutate(`Called number` = as.character(`Called number`)) |>
-  filter(!is.na(`Correlation ID`), !is.na(`Called number`)) |> 
+  # Filter out NA rows, convert duration to minutes
+  mutate(`Called number` = as.character(`Called number`),
+         Duration_min = Duration / 60) |>
+  filter(!is.na(`Called number`)) |> 
   
   # Remove duplicate call logs
   distinct(`Correlation ID`, `Called number`, .keep_all = TRUE) |>
@@ -131,7 +132,8 @@ presentation2_df <- all_calls |>
     Call_Path,
     `Called number`,
     Description,
-    Duration
+    Duration,
+    Duration_min
   )
 
 # --- Step 7: Export to CSV ---
