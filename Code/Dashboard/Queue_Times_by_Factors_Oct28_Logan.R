@@ -27,3 +27,5 @@ queued_clients <- queued_clients %>%
          time_in_queue_min = time_in_queue_s / 60
   )
 
+# save out data
+write_csv(queued_clients, file = "/Users/loganroever/Desktop/stat390.nosync/queued_clients.csv")
