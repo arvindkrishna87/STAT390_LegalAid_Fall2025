@@ -29,7 +29,7 @@ df_union1 %>% count(contact_session_id) #90,940 contact session ids
 #--------------------------------------------------------------------------------------------
 
 #rows that are in this EP
-family <- df_union1 %>% filter(ep_name == "Legal Family Menu Telephony EP")
+family <- krish_file_python %>% filter(ep_name == "Legal Family Menu Telephony EP")
 
 #all calls that have a row that says legal family menu telephony EP
 ##aka all calls that pass through the family menu at some point
@@ -235,14 +235,33 @@ abandoned %>%
   fmt_percent(
     columns = c(proportion),   
     decimals = 2                 
-  ) 
+  ) %>% 
+  tab_style(
+    style = cell_fill(color = "#d4edda"),  # light green
+    locations = cells_body(
+      rows = abandoned == "Not Abandoned"
+    )
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#f8d7da"),  # light red
+    locations = cells_body(
+      rows = abandoned == "Abandoned"
+    )
+  )
+
 
 #Check categories
 family_analysis %>%
   filter(activity_analysis == "Undetermined") %>% view()
 
 family_analysis %>%
-  filter(activity_analysis == "Not Abandoned - Queue Menu 1") %>% view()
+  filter(activity_analysis == "Abandoned - Family Menu") %>% 
+  filter(contact_session_id %in% (family_last3_rows %>% filter(activity_name == "FamilyMenu" & 
+                                                            (lag(activity_name) == "DivorceOrParentingMenu"))))
+
+#EXAMPLE FOR CLASS
+family_analysis %>% filter(contact_session_id == "9add5213-9391-4acd-8470-060e5c953d23") %>% view()
+
 
 #### VISUALIZATION
 ggplot(abandoned, aes(x = "", y = proportion, fill = abandoned))+
