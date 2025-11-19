@@ -78,47 +78,7 @@ otherlegal_analysis <- otherlegal_menu %>%
                                        contact_session_id %in% (otherlegal_last3_rows %>% filter(ep_name == "Main Number Telephony EP")
                                        )$contact_session_id 
                                        ~ "Not Abandoned - Left From Main Menu",
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "FamilyMenu"|
-                                                                                               activity_name == "DivorceOrParentingMenu" |
-                                                                                               activity_name == "SimpleDivorceMenu" |
-                                                                                               activity_name == "ChildSupportMenu"
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "DivorceOrParentingMenu" & 
-                                                                                               (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "DivorceOrParentingMenu" & 
-                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
-                                                                                               (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
-                                                                                                   (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "ChildSupportMenu" & 
-                                                                                               (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "ChildSupportMenu" & 
-                                                                                                   (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "FamilyMenu" & 
-                                                                                               (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "FamilyMenu" & 
-                                                                                                   (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
-                                       ))$contact_session_id 
-                                       ~ "Not Abandoned - Exited to Family Menu",
+                                    
                                        
                                        contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "ClosedQueueMenu" |
                                                                                                activity_name == "ClosedMenu" | 
@@ -189,7 +149,7 @@ otherlegal_analysis <- otherlegal_menu %>%
                                        contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "OtherLegalMenu" & 
                                                                                                    (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
                                        ))$contact_session_id 
-                                       ~ "Not Abandoned - Other Legal Menu",
+                                       ~ "Abandoned - Other Legal Menu",
                                        
                                        contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
                                        ~ "Abandoned - Queue Menu 1",
@@ -209,12 +169,13 @@ otherlegal_analysis <- otherlegal_menu %>%
                                                                                                activity_name == "TenantMenu" |
                                                                                                activity_name == "ImmigrationMenu" | 
                                                                                                activity_name == "ImmigrationOtherMenu"|
-                                                                                               ep_name == "Legal Housing Menu Telephony EP"))$contact_session_id 
+                                                                                               ep_name == "Legal Housing Menu Telephony EP" | 
+                                                                                               ep_name == "Legal Family Menu Telephony EP"))$contact_session_id 
                                        ~ "Not Abandoned - Exited Other Legal Menu to Another Menu",
                                        contact_session_id %in% (otherlegal_last2_rows %>% filter(str_detect(activity_name, "Senior")))$contact_session_id ~ 
                                          "Not Abandoned - Exited Other Legal Menu to Another Menu",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(ep_name, "Senior")))$contact_session_id ~ 
-                                         "Not Abandoned - Exited to Another Menu",
+                                         "Not Abandoned - Exited Other Legal Menu to Another Menu",
                                        contact_session_id %in% (otherlegal_last2_rows %>% filter(str_detect(activity_name, "Immigration")))$contact_session_id ~ 
                                          "Not Abandoned - Exited Other Legal Menu to Another Menu",
                                        .default = "Undetermined")) %>% 
@@ -250,7 +211,7 @@ otherlegal_analysis %>%
   filter(activity_analysis == "Undetermined") %>% view()
 
 otherlegal_analysis %>%
-  filter(activity_analysis == "Not Abandoned - Other Legal Other Menu") %>% view()
+  filter(activity_analysis == "Not Abandoned - Exited to Family Menu") %>% view()
 
 #Voicemail Transfer Breakdown
 otherlegal_analysis %>%
@@ -331,7 +292,7 @@ otable %>%
   mutate(proportion = n/sum(n)) %>% 
   relocate(abandoned, analysis) %>% 
   gt(rowname_col = "analysis") %>% 
-  tab_header(title = md("**Call End Reasons**"), 
+  tab_header(title = md("**Abandoned Call Reasons**"), 
              subtitle = "Other Legal Menu") |>
   cols_label(n = md("Number of Calls"), 
              proportion = md("Proportion of Calls")) |> 
