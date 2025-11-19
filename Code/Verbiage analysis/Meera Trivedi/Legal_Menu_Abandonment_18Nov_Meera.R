@@ -15,14 +15,17 @@ library(gt)
 krish_file_python <- read_csv("/Users/meeratrivedi/Downloads/STAT 390/krish_cleaning.csv") %>% 
   clean_names()
 
-#rows that are in this EP
-legal <- krish_file_python %>% filter(ep_name == "Legal Menu Telephony EP")
+krish_full_file <- read_csv("/Users/meeratrivedi/Downloads/STAT 390/krish_cleaning_full.csv") %>% 
+  clean_names()
 
-legal2 <- krish_file_python %>% filter(activity_name == "LegalMenu2")
+#rows that are in this EP
+legal <- krish_full_file %>% filter(ep_name == "Legal Menu Telephony EP")
+
+legal2 <- krish_full_file %>% filter(activity_name == "LegalMenu2")
 
 #all calls that have a row that says legal menu 2
 ##aka all calls that pass through the legal menu 2 at some point
-legal_menu2 <- krish_file_python %>%
+legal_menu2 <- krish_full_file %>%
   semi_join(legal2, by = "contact_session_id")
 
 #make call duration variable
@@ -45,7 +48,7 @@ legal2_last_rows <- legal_menu2 %>%
   group_by(contact_session_id) %>%
   slice_tail(n = 1) %>%
   ungroup()
-#number of rows confirms number of calls that passed through legal menu 2: 35,158
+#number of rows confirms number of calls that passed through legal menu 2: 92,696
 
 #last activities of each call - count
 legal2_last_rows %>% count(activity_name)
@@ -75,6 +78,18 @@ legal2_last3_rows <- legal_menu2 %>%
   ungroup()
 
 
+legal2_last4_rows <- legal_menu2 %>%
+  group_by(contact_session_id) %>%
+  slice(
+    if (is.na(last(activity_name))) {
+      (n()-3):n()   # take last four rows if last activity_name is NA
+    } else {
+      n()           # take only the last row otherwise
+    }
+  ) %>%
+  ungroup()
+
+
 legal2_last2_rows %>% count(activity_name) %>% view()
 
 legal2_last2_rows %>% count(queue_name) %>% view()
@@ -88,6 +103,14 @@ legal2_analysis <- legal_menu2 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Left From Main Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "MainMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Left From Main Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(ep_name == "Main Number Telephony EP")
+                                       )$contact_session_id 
+                                       ~ "Not Abandoned - Left From Main Menu",
+                                       
                                        contact_session_id %in% (legal2_last2_rows %>% filter(activity_name == "FamilyMenu"|
                                                                                              activity_name == "DivorceOrParentingMenu" |
                                                                                              activity_name == "SimpleDivorceMenu" |
@@ -99,9 +122,17 @@ legal2_analysis <- legal_menu2 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "DivorceOrParentingMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
                                        
                                        contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
                                        
@@ -109,11 +140,18 @@ legal2_analysis <- legal_menu2 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "ChildSupportMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
                                        contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "FamilyMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
-                                       
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "FamilyMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
                                        contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "ClosedQueueMenu" |
                                                                                                activity_name == "ClosedMenu" | 
                                                                                                flow_name == "ClosedQueueMenu"|
@@ -134,20 +172,34 @@ legal2_analysis <- legal_menu2 %>%
                                        ~ "Not Abandoned - Requested Callback",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(activity_name == "PlayMOH300s"))$contact_session_id 
                                        ~ "Abandoned - Quit Hold Music",
+                                       
                                        contact_session_id %in% (legal2_last2_rows %>% filter(activity_name == "OtherLegalMenu"))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Other Legal Menu",
                                        contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Other Legal Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Other Legal Menu",
+                                       
                                        contact_session_id %in% (legal2_last2_rows %>% filter(activity_name == "OtherLegalCriminalCaseMenu"))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Other Legal Menu",
                                        contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalCriminalCaseMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Other Legal Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalCriminalCaseMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Other Legal Menu",
                                        contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalPersonalInjuryMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Other Legal Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalPersonalInjuryMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Other Legal Menu",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(activity_name == "OtherLegalOtherMenu"))$contact_session_id 
@@ -156,10 +208,17 @@ legal2_analysis <- legal_menu2 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Other Legal Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalOtherMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Other Legal Menu",
+                                       
                                        contact_session_id %in% (legal2_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
                                        ~ "Abandoned - Queue Menu 1",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(queue_name, regex("transfer", ignore_case = TRUE)))
                                        )$contact_session_id ~ "Not Abandoned - Transfer",
+                                       contact_session_id %in% (family_last2_rows %>% filter(str_detect(activity_name, regex("Queue", ignore_case = TRUE)))
+                                       )$contact_session_id ~ "Not Abandoned - Other Queue",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(is.na(activity_name) & !is.na(agent_name)))$contact_session_id 
                                        ~ "Not Abandoned - Agent Handled",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(activity_name, "Agent")))$contact_session_id 
@@ -176,6 +235,8 @@ legal2_analysis <- legal_menu2 %>%
                                        ~ "Not Abandoned - Exited to Another Menu",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(activity_name, "Senior")))$contact_session_id ~ 
                                          "Not Abandoned - Exited to Another Menu",
+                                       contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(ep_name, "Senior")))$contact_session_id ~ 
+                                         "Not Abandoned - Exited to Another Menu",
                                        contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(activity_name, "Immigration")))$contact_session_id ~ 
                                          "Not Abandoned - Exited to Another Menu",
                                        .default = "Undetermined")) %>% 
@@ -189,7 +250,7 @@ table2 <- legal2_analysis %>%
   slice_tail(n = 1) %>%
   ungroup() %>% 
   count(activity_analysis) %>% 
-  mutate(proportion = n/35158, 
+  mutate(proportion = n/92696, 
          abandoned = case_when(
            grepl("Not Abandoned", activity_analysis, ignore.case = TRUE) ~ "Not Abandoned",
            grepl("Abandoned", activity_analysis, ignore.case = TRUE) ~ "Abandoned",
@@ -201,7 +262,7 @@ table2 <- legal2_analysis %>%
 
 ## SEE TABLE
 table2 %>% 
-  mutate(proportion = (percent(n/35158, accuracy = 0.01)))
+  mutate(proportion = (percent(n/92696, accuracy = 0.01)))
 
 
 #Check categories
@@ -209,7 +270,11 @@ legal2_analysis %>%
   filter(activity_analysis == "Undetermined") %>% view()
 
 legal2_analysis %>%
-  filter(activity_analysis == "Abandoned - Legal Menu 2") %>% view()
+  filter(activity_analysis == "Not Abandoned - Other Queue") %>% view()
+
+legal2_analysis %>%
+  filter(activity_analysis == "Abandoned - Legal Menu 2") %>% 
+  filter(contact_session_id %in% (legal2_last4_rows %>% filter(activity_name == "OtherLegalMenu")))
 
 
 #GT TABLE - ABANDONMENT/NOT REASONS
@@ -274,6 +339,26 @@ abandoned2 %>%
     )
   )
 
+
+#OF ABANDONED CALLS - PROPORTIONS
+table2 %>% 
+  filter(abandoned == "Abandoned") %>% 
+  group_by(abandoned) %>% 
+  mutate(analysis = str_trim(str_remove(activity_analysis, "^[^-]+-"))) %>% 
+  select(-activity_analysis) %>% 
+  mutate(proportion = n/sum(n)) %>% 
+  relocate(abandoned, analysis) %>% 
+  gt(rowname_col = "analysis") %>% 
+  tab_header(title = md("**Abandoned Call Reasons**"), 
+             subtitle = "Legal Menu 2") |>
+  cols_label(n = md("Number of Calls"), 
+             proportion = md("Proportion of Calls")) |> 
+  fmt_percent(
+    columns = c(proportion),   
+    decimals = 2                 
+  )%>% 
+  tab_options(row_group.background.color = "#31356e")
+
 ggplot(abandoned2, aes(x = "", y = proportion, fill = abandoned))+
   geom_bar(width = 1, stat = "identity")+
   scale_x_discrete(NULL)+
@@ -287,7 +372,7 @@ ggplot(abandoned2, aes(x = "", y = proportion, fill = abandoned))+
   scale_fill_manual(name = NULL, 
                     values = c("brown1", "seagreen", "grey80"),
   ) +
-  labs(title = "Proportion of Abandonment Reasons", 
+  labs(title = "Proportion of Abandonment", 
        subtitle = "Legal Menu 2", 
        fill = NULL) +
   theme_minimal()+
@@ -301,11 +386,11 @@ ggplot(abandoned2, aes(x = "", y = proportion, fill = abandoned))+
 
 #### LEGAL MENU 1 -------
 
-legal1 <- krish_file_python %>% filter(activity_name == "LegalMenu1")
+legal1 <- krish_full_file %>% filter(activity_name == "LegalMenu1")
 
-#all calls that have a row that says legal menu 2
-##aka all calls that pass through the legal menu 2 at some point
-legal_menu1 <- krish_file_python %>%
+#all calls that have a row that says legal menu 1
+##aka all calls that pass through the legal menu 1 at some point
+legal_menu1 <- krish_full_file %>%
   semi_join(legal1, by = "contact_session_id")
 
 #make call duration variable
@@ -321,12 +406,12 @@ legal1_last_rows <- legal_menu1 %>%
   group_by(contact_session_id) %>%
   slice_tail(n = 1) %>%
   ungroup()
-#number of rows confirms number of calls that passed through legal menu 2: 36,443
+#number of rows confirms number of calls that passed through legal menu 1: 96,173
 
 #last activities of each call - count
 legal1_last_rows %>% count(activity_name)
 
-#slice out last 2 rows of each legal menu 2 call if activity name is na in the last row
+#slice out last 2 rows of each legal menu 1 call if activity name is na in the last row
 legal1_last2_rows <- legal_menu1 %>%
   group_by(contact_session_id) %>%
   slice(
@@ -361,6 +446,13 @@ legal1_analysis <- legal_menu1 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Left From Main Menu",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "MainMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Left From Main Menu",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(ep_name == "Main Number Telephony EP")
+                                       )$contact_session_id 
+                                       ~ "Not Abandoned - Left From Main Menu",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(activity_name == "FamilyMenu"|
                                                                                                activity_name == "DivorceOrParentingMenu" |
                                                                                                activity_name == "SimpleDivorceMenu" |
@@ -372,9 +464,17 @@ legal1_analysis <- legal_menu1 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "DivorceOrParentingMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
                                        
                                        contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
                                        
@@ -382,8 +482,17 @@ legal1_analysis <- legal_menu1 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "ChildSupportMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
+                                       
                                        contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "FamilyMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Family Menu",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "FamilyMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Family Menu",
                                        
@@ -407,20 +516,34 @@ legal1_analysis <- legal_menu1 %>%
                                        ~ "Not Abandoned - Requested Callback",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(activity_name == "PlayMOH300s"))$contact_session_id 
                                        ~ "Abandoned - Quit Hold Music",
+                                       
                                        contact_session_id %in% (legal1_last2_rows %>% filter(activity_name == "OtherLegalMenu"))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Legal Menu 2",
                                        contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "OtherLegalMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Legal Menu 2",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "OtherLegalMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Legal Menu 2",
+                                       
                                        contact_session_id %in% (legal1_last2_rows %>% filter(activity_name == "OtherLegalCriminalCaseMenu"))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Legal Menu 2",
                                        contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "OtherLegalCriminalCaseMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Legal Menu 2",
+                                       contact_session_id %in% (legal2_last3_rows %>% filter(activity_name == "OtherLegalCriminalCaseMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Legal Menu 2",
                                        contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "OtherLegalPersonalInjuryMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Legal Menu 2",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "OtherLegalPersonalInjuryMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Legal Menu 2",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(activity_name == "OtherLegalOtherMenu"))$contact_session_id 
@@ -429,10 +552,17 @@ legal1_analysis <- legal_menu1 %>%
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
                                        ~ "Not Abandoned - Exited to Legal Menu 2",
+                                       contact_session_id %in% (legal1_last3_rows %>% filter(activity_name == "OtherLegalOtherMenu" & 
+                                                                                               (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Exited to Legal Menu 2",
+                                       
                                        contact_session_id %in% (legal1_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
                                        ~ "Abandoned - Queue Menu 1",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(str_detect(queue_name, regex("transfer", ignore_case = TRUE)))
                                        )$contact_session_id ~ "Not Abandoned - Transfer",
+                                       contact_session_id %in% (family_last2_rows %>% filter(str_detect(activity_name, regex("Queue", ignore_case = TRUE)))
+                                       )$contact_session_id ~ "Not Abandoned - Other Queue",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(is.na(activity_name) & !is.na(agent_name)))$contact_session_id 
                                        ~ "Not Abandoned - Agent Handled",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(str_detect(activity_name, "Agent")))$contact_session_id 
@@ -449,6 +579,8 @@ legal1_analysis <- legal_menu1 %>%
                                        ~ "Not Abandoned - Exited to Another Menu",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(str_detect(activity_name, "Senior")))$contact_session_id ~ 
                                          "Not Abandoned - Exited to Another Menu",
+                                       contact_session_id %in% (legal2_last2_rows %>% filter(str_detect(ep_name, "Senior")))$contact_session_id ~ 
+                                         "Not Abandoned - Exited to Another Menu",
                                        contact_session_id %in% (legal1_last2_rows %>% filter(str_detect(activity_name, "Immigration")))$contact_session_id ~ 
                                          "Not Abandoned - Exited to Another Menu",
                                        
@@ -463,7 +595,7 @@ table1 <- legal1_analysis %>%
   slice_tail(n = 1) %>%
   ungroup() %>% 
   count(activity_analysis) %>% 
-  mutate(proportion = n/36443, 
+  mutate(proportion = n/96173, 
          abandoned = case_when(
            grepl("Not Abandoned", activity_analysis, ignore.case = TRUE) ~ "Not Abandoned",
            grepl("Abandoned", activity_analysis, ignore.case = TRUE) ~ "Abandoned",
@@ -475,15 +607,17 @@ table1 <- legal1_analysis %>%
 
 ## SEE TABLE
 table1 %>% 
-  mutate(proportion = (percent(n/36443, accuracy = 0.01)))
+  mutate(proportion = (percent(n/96173, accuracy = 0.01)))
 
 #Check categories
 legal1_analysis %>%
   filter(activity_analysis == "Undetermined") %>% view()
 
 legal1_analysis %>%
-  filter(activity_analysis == "Abandoned - Exited Legal Menu 1") %>% view()
+  filter(activity_analysis == "Abandoned - Legal Menu 2") %>% 
+  filter(activity_name == "LegalMenu1") %>% count(contact_session_id)
 
+legal1_analysis %>% filter(activity_analysis == "Not Abandoned - Transfer") %>% view()
 
 #GT TABLE - ABANDONMENT/NOT REASONS
 table1 %>% 
@@ -547,7 +681,23 @@ abandoned1 %>%
     )
   )
 
-
+table1 %>% 
+  filter(abandoned == "Abandoned") %>% 
+  group_by(abandoned) %>% 
+  mutate(analysis = str_trim(str_remove(activity_analysis, "^[^-]+-"))) %>% 
+  select(-activity_analysis) %>% 
+  mutate(proportion = n/sum(n)) %>% 
+  relocate(abandoned, analysis) %>% 
+  gt(rowname_col = "analysis") %>% 
+  tab_header(title = md("**Abandoned Call Reasons**"), 
+             subtitle = "Legal Menu 1") |>
+  cols_label(n = md("Number of Calls"), 
+             proportion = md("Proportion of Calls")) |> 
+  fmt_percent(
+    columns = c(proportion),   
+    decimals = 2                 
+  )%>% 
+  tab_options(row_group.background.color = "#31356e")
 
 ggplot(abandoned1, aes(x = "", y = proportion, fill = abandoned))+
   geom_bar(width = 1, stat = "identity")+
@@ -562,7 +712,7 @@ ggplot(abandoned1, aes(x = "", y = proportion, fill = abandoned))+
   scale_fill_manual(name = NULL, 
                     values = c("brown1", "seagreen", "grey80"),
   ) +
-  labs(title = "Proportion of Abandonment Reasons", 
+  labs(title = "Proportion of Abandonment", 
        subtitle = "Legal Menu 1", 
        fill = NULL) +
   theme_minimal()+
