@@ -23,12 +23,6 @@ otherlegal_menu <- otherlegal_menu %>%
   mutate(time_diff = as.numeric(time_diff)) %>% 
   mutate(call_duration = sum(time_diff, na.rm = TRUE)) 
 
-#number of other legal calls that went through each activity name
-otherlegal_menu %>% 
-  group_by(activity_name) %>% 
-  count(contact_session_id) %>% 
-  count(activity_name) %>% 
-  arrange(desc(n))
 
 #slice out last row of each other legal call
 otherlegal_last_rows <- otherlegal_menu %>%
@@ -80,26 +74,6 @@ otherlegal_analysis <- otherlegal_menu %>%
                                        ~ "Not Abandoned - Left From Main Menu",
                                     
                                        
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "ClosedQueueMenu" |
-                                                                                               activity_name == "ClosedMenu" | 
-                                                                                               flow_name == "ClosedQueueMenu"|
-                                                                                               ep_name == "Closed Queue Menu Telephony EP"))$contact_session_id 
-                                       ~ "Not Abandoned - Closed Queue Menu",
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(ep_name == "Closed Hours-Holidays Menu Telephony EP"))$contact_session_id 
-                                       ~ "Not Abandoned - Closed Holidays Menu",
-                                       
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "IntakePreQueueMessage1"))$contact_session_id 
-                                       ~ "Not Abandoned - Intake Pre Queue Message 1",
-                                       
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "PreQueueMessage2"))$contact_session_id 
-                                       ~ "Abandoned - Pre Queue Message 2",
-                                       
-                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "PlayCCBConfirmation" | 
-                                                                                               activity_name == "ConfirmCallbackNumber"|
-                                                                                               ep_name == "Courtesy Callback Telephony EP"))$contact_session_id 
-                                       ~ "Not Abandoned - Requested Callback",
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "PlayMOH300s"))$contact_session_id 
-                                       ~ "Abandoned - Quit Hold Music",
                                        
                                        
                                        contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "OtherLegalMenu" & 
@@ -151,16 +125,7 @@ otherlegal_analysis <- otherlegal_menu %>%
                                        ))$contact_session_id 
                                        ~ "Abandoned - Other Legal Menu",
                                        
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
-                                       ~ "Abandoned - Queue Menu 1",
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(str_detect(queue_name, regex("transfer", ignore_case = TRUE)))
-                                       )$contact_session_id ~ "Not Abandoned - Transfer",
-                                       contact_session_id %in% (family_last2_rows %>% filter(str_detect(activity_name, regex("Queue", ignore_case = TRUE)))
-                                       )$contact_session_id ~ "Not Abandoned - Other Queue",
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(is.na(activity_name) & !is.na(agent_name)))$contact_session_id 
-                                       ~ "Not Abandoned - Agent Handled",
-                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(str_detect(activity_name, "Agent")))$contact_session_id 
-                                       ~ "Not Abandoned - Agent Handled",
+                                       
                                        contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "BenefitsMenu" | 
                                                                                                activity_name == "HIVMenu" | 
                                                                                                activity_name == "EmploymentMenu"|
@@ -178,9 +143,157 @@ otherlegal_analysis <- otherlegal_menu %>%
                                          "Not Abandoned - Exited Other Legal Menu to Another Menu",
                                        contact_session_id %in% (otherlegal_last2_rows %>% filter(str_detect(activity_name, "Immigration")))$contact_session_id ~ 
                                          "Not Abandoned - Exited Other Legal Menu to Another Menu",
+                                       
+                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "IntakePreQueueMessage1"))$contact_session_id 
+                                       ~ "Not Abandoned - Intake Pre Queue Message 1",
+                                       
+                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "PreQueueMessage2"))$contact_session_id 
+                                       ~ "Abandoned - Pre Queue Message 2",
+                                       
+                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "PlayCCBConfirmation" | 
+                                                                                                   activity_name == "ConfirmCallbackNumber"|
+                                                                                                   ep_name == "Courtesy Callback Telephony EP"))$contact_session_id 
+                                       ~ "Not Abandoned - Requested Callback",
+                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "PlayMOH300s"))$contact_session_id 
+                                       ~ "Abandoned - Quit Hold Music",
+                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
+                                       ~ "Abandoned - Queue Menu 1",
+                                       contact_session_id %in% (legal1_last2_rows %>% filter(queue_name == "Clinic Voicemail Transfer" | 
+                                                                                               queue_name == "Front Desk Transfer"))
+                                       $contact_session_id ~ "Not Abandoned - Transfer",
+                                       contact_session_id %in% (legal1_last2_rows %>% filter(str_detect(queue_name, regex("transfer", ignore_case = TRUE)))
+                                       )$contact_session_id ~ "Not Abandoned - Other Transfer",
+                                       contact_session_id %in% (family_last2_rows %>% filter(str_detect(activity_name, regex("Queue", ignore_case = TRUE)))
+                                       )$contact_session_id ~ "Not Abandoned - Other Queue",
+                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(is.na(activity_name) & !is.na(agent_name)))$contact_session_id 
+                                       ~ "Not Abandoned - Agent Handled",
+                                       contact_session_id %in% (otherlegal_last2_rows %>% filter(str_detect(activity_name, "Agent")))$contact_session_id 
+                                       ~ "Not Abandoned - Agent Handled",
+                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(activity_name == "ClosedQueueMenu" |
+                                                                                                   activity_name == "ClosedMenu" | 
+                                                                                                   flow_name == "ClosedQueueMenu"|
+                                                                                                   ep_name == "Closed Queue Menu Telephony EP"))$contact_session_id 
+                                       ~ "Not Abandoned - Closed Queue Menu",
+                                       contact_session_id %in% (otherlegal_last3_rows %>% filter(ep_name == "Closed Hours-Holidays Menu Telephony EP"))$contact_session_id 
+                                       ~ "Not Abandoned - Closed Holidays Menu",
+                                       
                                        .default = "Undetermined")) %>% 
   relocate(activity_analysis, contact_session_id)
 
+otherlegal_analysis <- otherlegal_analysis %>% 
+  filter(activity_analysis != "Not Abandoned - Exited Other Legal Menu to Another Menu" &
+           activity_analysis != "Not Abandoned - Exited to Legal Menu 2" &
+           activity_analysis != "Not Abandoned - Left From Main Menu" &
+           activity_analysis != "Not Abandoned - Other Queue" &
+           activity_analysis != "Not Abandoned - Exited to Legal Menu 1" &
+           activity_analysis != "Not Abandoned - Other Transfer")
+
+
+otherlegal_analysis2 <- otherlegal_analysis %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Not Abandoned - Closed Queue Menu" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Closed Queue Menu" &
+         ep_name == "Closed Queue Menu Telephony EP" &
+         last_non_na_ep == "Legal Menu Telephony EP")
+  )
+#keep 272 instead of 619
+otherlegal_analysis2 %>% count(contact_session_id) #12,732
+
+
+#fix callbacks
+otherlegal_analysis2 <- otherlegal_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Not Abandoned - Requested Callback" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Requested Callback" &
+         ep_name == "All LAC Queues Telephony EP" &
+         last_non_na_ep == "Legal Menu Telephony EP")
+  )
+#keep 24 instead of 72
+otherlegal_analysis2 %>% count(contact_session_id) #12,684
+
+#fix intake pre queue 1
+otherlegal_analysis2 <- otherlegal_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+   activity_analysis != "Not Abandoned - Intake Pre Queue Message 1" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Intake Pre Queue Message 1" &
+         ep_name == "All LAC Queues Telephony EP" &
+         last_non_na_ep == "Legal Menu Telephony EP")
+  )
+#keep all 4 
+
+#fix closed holidays
+otherlegal_analysis2 <- otherlegal_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Not Abandoned - Closed Holidays Menu" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Closed Holidays Menu" &
+         ep_name == "Closed Hours-Holidays Menu Telephony EP" &
+         last_non_na_ep == "Legal Menu Telephony EP")
+  ) 
+
+#fix queue 1
+otherlegal_analysis2 <- otherlegal_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  mutate(
+    last_non_na_ep2 = lag(ep_name, 3),
+    last_non_na_ep2 = zoo::na.locf(last_non_na_ep2, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Abandoned - Queue Menu 1" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Abandoned - Queue Menu 1" &
+         ep_name == "All LAC Queues Telephony EP" &
+         last_non_na_ep == "Legal Menu Telephony EP" &
+         last_non_na_ep2 == "Other Legal Menu Telephony EP"
+         ))
+#keep 1 instead of 3  
+otherlegal_analysis2 %>% count(contact_session_id) #12,682
+
+
+
+otherlegal_analysis %>% count(contact_session_id) #13,069
 
 #PROPORTION OF ABANDONMENT OR NOT ABANDONMENT REASONS
 otable <- otherlegal_analysis %>% 
@@ -189,7 +302,7 @@ otable <- otherlegal_analysis %>%
   slice_tail(n = 1) %>%
   ungroup() %>% 
   count(activity_analysis) %>% 
-  mutate(proportion = n/14202, 
+  mutate(proportion = n/13069, 
          abandoned = case_when(
            grepl("Not Abandoned", activity_analysis, ignore.case = TRUE) ~ "Not Abandoned",
            grepl("Abandoned", activity_analysis, ignore.case = TRUE) ~ "Abandoned",
@@ -201,11 +314,11 @@ otable <- otherlegal_analysis %>%
 
 ## SEE TABLE
 otable %>% 
-  mutate(proportion = (percent(n/14202, accuracy = 0.01)))
+  mutate(proportion = (percent(n/13069, accuracy = 0.01)))
 
 #Check categories
 otherlegal_analysis %>%
-  filter(activity_analysis == "Abandoned - Other Legal Menu") %>% view()
+  filter(activity_analysis == "Abandoned - Queue Menu 1") %>% view()
 
 otherlegal_analysis %>%
   filter(activity_analysis == "Undetermined") %>% view()
@@ -237,8 +350,8 @@ otable %>%
     decimals = 2                 
   ) %>% 
   tab_options(row_group.background.color = "#31356e", 
-              table.font.size = px(12),      # Reduce font size for the entire table
-              data_row.padding = px(3),      # Adjusts padding for data rows
+              table.font.size = px(15),      # Reduce font size for the entire table
+              data_row.padding = px(5),      # Adjusts padding for data rows
               heading.padding = px(2),       # Adjusts padding for heading rows
               column_labels.font.size = px(11)) |>  # Reduce font size for column labels
   data_color(
