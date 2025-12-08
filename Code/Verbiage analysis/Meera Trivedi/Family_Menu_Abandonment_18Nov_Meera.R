@@ -9,15 +9,19 @@ library(hms)
 library(scales)
 library(gt)
 
-
+#march 16 2025, onward
 krish_file_python <- read_csv("/Users/meeratrivedi/Downloads/STAT 390/krish_cleaning.csv") %>% 
   clean_names()
 
-
 krish_file_python %>% 
-  count(contact_session_id)
+  count(contact_session_id) #90,940 unique contact session ids
 
-df_union1 %>% count(contact_session_id) #90,940 contact session ids
+#full data 2024 and 2025
+krish_full_file <- read_csv("/Users/meeratrivedi/Downloads/STAT 390/krish_cleaning_full.csv") %>% 
+  clean_names()
+
+krish_full_file %>% 
+  count(contact_session_id) #248,442 unique contact session ids
 
 ##NOTES FROM KRISH - 10/30/25
 #eventually check distribution of time when customer is talking to agent
@@ -29,11 +33,11 @@ df_union1 %>% count(contact_session_id) #90,940 contact session ids
 #--------------------------------------------------------------------------------------------
 
 #rows that are in this EP
-family <- krish_file_python %>% filter(ep_name == "Legal Family Menu Telephony EP")
+family <- krish_full_file %>% filter(ep_name == "Legal Family Menu Telephony EP")
 
 #all calls that have a row that says legal family menu telephony EP
 ##aka all calls that pass through the family menu at some point
-family_menu <- krish_file_python %>%
+family_menu <- krish_full_file %>%
   semi_join(family, by = "contact_session_id")
 
 #make call duration variable
@@ -44,19 +48,12 @@ family_menu <- family_menu %>%
   mutate(time_diff = as.numeric(time_diff)) %>% 
   mutate(call_duration = sum(time_diff, na.rm = TRUE)) 
 
-#number of family menu calls that went through each activity name
-family_menu %>% 
-  group_by(activity_name) %>% 
-  count(contact_session_id) %>% 
-  count(activity_name) %>% 
-  arrange(desc(n))
-
 #slice out last row of each family menu call
 family_last_rows <- family_menu %>%
   group_by(contact_session_id) %>%
   slice_tail(n = 1) %>%
   ungroup()
-#number of rows confirms number of calls that passed through family menu: 9743
+#number of rows confirms number of calls that passed through family menu: 24,797
 
 #last activities of each call - count
 family_last_rows %>% count(activity_name)
@@ -85,51 +82,75 @@ family_last3_rows <- family_menu %>%
   ) %>%
   ungroup()
 
-family_last2_rows %>% count(activity_name) %>% view()
-
-family_last2_rows %>% count(queue_name) %>% view()
-
 
 ### ANALYSIS TABLE
 #using last activity of each call to determine if they abandoned the call
 family_analysis <- family_menu %>% 
   mutate(activity_analysis = case_when(contact_session_id %in% (family_last2_rows %>% filter(activity_name == "ChildSupportMenu"))$contact_session_id 
-                                            ~ "Not Abandoned - Child Support",
+                                            ~ "Not Abandoned - Child Support Menu",
                                        contact_session_id %in% (family_last3_rows %>% filter(activity_name == "ChildSupportMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
-                                       ~ "Not Abandoned - Child Support",
+                                       ~ "Not Abandoned - Child Support Menu",
+                                       contact_session_id %in% (family_last3_rows %>% filter(activity_name == "ChildSupportMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Child Support Menu",
+                                       
                                        contact_session_id %in% (family_last3_rows %>% filter(activity_name == "MainMenu" & 
                                                                                                (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                                        ))$contact_session_id 
-                                       ~ "Not Abandoned - Returned to Main Menu",
+                                       ~ "Not Abandoned - Left From Main Menu",
+                                       contact_session_id %in% (family_last3_rows %>% filter(activity_name == "MainMenu" & 
+                                                                                               (is.na(lead(activity_name)) |is.na(lead(activity_name, 2)))
+                                       ))$contact_session_id 
+                                       ~ "Not Abandoned - Left From Main Menu",
+                                       contact_session_id %in% (family_last3_rows %>% filter(ep_name == "Main Number Telephony EP")
+                                       )$contact_session_id 
+                                       ~ "Not Abandoned - Left From Main Menu",
+                                       
                               contact_session_id %in% (family_last2_rows %>% filter(activity_name == "FamilyMenu"))$contact_session_id 
                               ~ "Abandoned - Family Menu",
                               contact_session_id %in% (family_last3_rows %>% filter(activity_name == "FamilyMenu" & 
-                                                                                      (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                                                                                      (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
                                                                                     ))$contact_session_id 
                               ~ "Abandoned - Family Menu",
+                              contact_session_id %in% (family_last3_rows %>% filter(activity_name == "FamilyMenu" & 
+                                                                                      (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
+                              ))$contact_session_id 
+                              ~ "Abandoned - Family Menu",
+                              
                               contact_session_id %in% (family_last3_rows %>% filter(activity_name == "ClosedQueueMenu" |
                                                                                       activity_name == "ClosedMenu" | 
                                                                                       flow_name == "ClosedQueueMenu"|
                                                                                       ep_name == "Closed Queue Menu Telephony EP"))$contact_session_id 
                               ~ "Not Abandoned - Closed Queue Menu",
+                              contact_session_id %in% (family_last3_rows %>% filter(ep_name == "Closed Hours-Holidays Menu Telephony EP"))$contact_session_id 
+                              ~ "Not Abandoned - Closed Holidays Menu",
+                              
                               contact_session_id %in% (family_last2_rows %>% filter(activity_name == "SimpleDivorceMenu"))$contact_session_id 
                               ~ "Not Abandoned - Simple Divorce Menu",
                               contact_session_id %in% (family_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
                                                                                       (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                               ))$contact_session_id 
                               ~ "Not Abandoned - Simple Divorce Menu",
+                              contact_session_id %in% (family_last3_rows %>% filter(activity_name == "SimpleDivorceMenu" & 
+                                                                                      (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                              ))$contact_session_id 
+                              ~ "Not Abandoned - Simple Divorce Menu",
+                              
                               contact_session_id %in% (family_last2_rows %>% filter(activity_name == "DivorceOrParentingMenu"))$contact_session_id 
                               ~ "Abandoned - Divorce or Parenting Menu",
                               contact_session_id %in% (family_last3_rows %>% filter(activity_name == "DivorceOrParentingMenu" & 
                                                                                       (lead(termination_reason) == "Customer Left" | lead(termination_reason, 2) == "Customer Left")
                               ))$contact_session_id 
                               ~ "Abandoned - Divorce or Parenting Menu",
-                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "IntakePreQueueMessage1"))$contact_session_id 
-                              ~ "Not Abandoned - Intake Pre Queue Message 1",
-                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "PreQueueMessage2"))$contact_session_id 
-                              ~ "Abandoned - Pre Queue Message 2",
+                              contact_session_id %in% (family_last3_rows %>% filter(activity_name == "DivorceOrParentingMenu" & 
+                                                                                      (is.na(lead(activity_name)) | is.na(lead(activity_name, 2)))
+                              ))$contact_session_id 
+                              ~ "Abandoned - Divorce or Parenting Menu",
+                              
+                              
                               contact_session_id %in% (family_last3_rows %>% filter(activity_name == "LegalMenu2" | 
                                                                                       activity_name == "OtherLegalMenu" | 
                                                                                       activity_name == "OtherLegalCriminalCaseMenu" | 
@@ -139,18 +160,6 @@ family_analysis <- family_menu %>%
                                                                                       ep_name == "Other Legal Menu Telephony EP" 
                                                                                       ))$contact_session_id 
                               ~ "Not Abandoned - Exited to a Legal Menu",
-                              contact_session_id %in% (family_last2_rows %>% filter(str_detect(queue_name, regex("transfer", ignore_case = TRUE)))
-                              )$contact_session_id ~ "Not Abandoned - Transfer",
-                              contact_session_id %in% (family_last3_rows %>% filter(activity_name == "PlayCCBConfirmation" | 
-                                                                                      activity_name == "ConfirmCallbackNumber"|
-                                                                                      ep_name == "Courtesy Callback Telephony EP"))$contact_session_id 
-                              ~ "Not Abandoned - Requested Callback",
-                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "PlayMOH300s"))$contact_session_id 
-                              ~ "Abandoned - Quit Hold Music",
-                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
-                              ~ "Abandoned - Queue Menu 1",
-                             contact_session_id %in% (family_last2_rows %>% filter(is.na(activity_name) & !is.na(agent_name)))$contact_session_id 
-                             ~ "Not Abandoned - Agent Handled",
                               contact_session_id %in% (family_last3_rows %>% filter(activity_name == "BenefitsMenu" | 
                                                                                       activity_name == "HIVMenu" | 
                                                                                       activity_name == "EmploymentMenu"|
@@ -161,19 +170,192 @@ family_analysis <- family_menu %>%
                                                                                       activity_name == "ImmigrationOtherMenu" | 
                                                                                       ep_name == "Legal Housing Menu Telephony EP"))$contact_session_id 
                               ~ "Not Abandoned - Exited Family Menu to Another Menu",
-                             contact_session_id %in% (family_last2_rows %>% filter(str_detect(activity_name, "Senior")))$contact_session_id ~ 
-                               "Not Abandoned - Exited Family Menu to Another Menu",
+                              contact_session_id %in% (family_last3_rows %>% filter(str_detect(activity_name, "Senior")))$contact_session_id ~ 
+                                "Not Abandoned - Exited Family Menu to Another Menu",
+                              contact_session_id %in% (family_last3_rows %>% filter(activity_name == "PlayCCBConfirmation" | 
+                                                                                      activity_name == "ConfirmCallbackNumber"|
+                                                                                      ep_name == "Courtesy Callback Telephony EP"))$contact_session_id 
+                              ~ "Not Abandoned - Requested Callback",
+                              contact_session_id %in% (family_last2_rows %>% filter(ep_name == "Legal Family Menu Telephony EP" &
+                                                                                      str_detect(queue_name, regex("transfer", ignore_case = TRUE)))
+                              )$contact_session_id ~ "Not Abandoned - Transfer",
+                              
+                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "PlayMOH300s"))$contact_session_id 
+                              ~ "Abandoned - Quit Hold Music",
+                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "QueueMenu1"))$contact_session_id 
+                              ~ "Abandoned - Queue Menu 1",
+                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "IntakePreQueueMessage1"))$contact_session_id 
+                              ~ "Not Abandoned - Intake Pre Queue Message 1",
+                              contact_session_id %in% (family_last2_rows %>% filter(activity_name == "PreQueueMessage2"))$contact_session_id 
+                              ~ "Abandoned - Pre Queue Message 2",
+                              contact_session_id %in% (family_last2_rows %>% filter(str_detect(activity_name, regex("Queue", ignore_case = TRUE)))
+                              )$contact_session_id ~ "Not Abandoned - Other Queue",
+                             contact_session_id %in% (family_last2_rows %>% filter(is.na(activity_name) & queue_name == "Family" & !is.na(agent_name)))$contact_session_id 
+                             ~ "Not Abandoned - Agent Handled",
+                             contact_session_id %in% (family_last2_rows %>% filter(is.na(activity_name) & !is.na(agent_name)))$contact_session_id 
+                             ~ "Not Abandoned - Agent Handled in Another Menu",
+                              
                               .default = "Undetermined")) %>% 
   relocate(activity_analysis, contact_session_id)
 
+#filter out people who didn't end in family menu
+family_analysis <- family_analysis %>% 
+  filter(activity_analysis != "Not Abandoned - Exited to a Legal Menu" &
+         activity_analysis != "Not Abandoned - Exited Family Menu to Another Menu" &
+         activity_analysis != "Not Abandoned - Left From Main Menu" &
+         activity_analysis != "Not Abandoned - Other Queue" & 
+         activity_analysis != "Not Abandoned - Agent Handled in Another Menu")
+
+
+#fix closed queue
+family_analysis2 <- family_analysis %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Not Abandoned - Closed Queue Menu" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Closed Queue Menu" &
+         ep_name == "Closed Queue Menu Telephony EP" &
+         last_non_na_ep == "Legal Family Menu Telephony EP")
+  ) 
+#keep 16135 instead of 17358 
+
+#fix callbacks
+family_analysis2 <- family_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+  activity_analysis != "Not Abandoned - Requested Callback" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Requested Callback" &
+         ep_name == "All LAC Queues Telephony EP" &
+         last_non_na_ep == "Legal Family Menu Telephony EP")
+  ) 
+#keep 1913 instead of 1972 
+
+
+#fix intake pre queue 1
+family_analysis2 <- family_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Not Abandoned - Intake Pre Queue Message 1" |
+      
+      # But if activity_analysis IS the target, enforce extra rules
+      (activity_analysis == "Not Abandoned - Intake Pre Queue Message 1" &
+         ep_name == "All LAC Queues Telephony EP" &
+         last_non_na_ep == "Legal Family Menu Telephony EP")
+  )
+#keep 68 instead of 83
+
+
+#fix closed holidays
+family_analysis2 <- family_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Not Abandoned - Closed Holidays Menu" |
+    
+    # But if activity_analysis IS the target, enforce extra rules
+    (activity_analysis == "Not Abandoned - Closed Holidays Menu" &
+       ep_name == "Closed Hours-Holidays Menu Telephony EP" &
+       last_non_na_ep == "Legal Family Menu Telephony EP")
+  )
+#keep 3 instead of 6
+
+
+#fix queue 1
+family_analysis2 <- family_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Abandoned - Queue Menu 1" |
+    
+    # But if activity_analysis IS the target, enforce extra rules
+    (activity_analysis == "Abandoned - Queue Menu 1" &
+       ep_name == "All LAC Queues Telephony EP" &
+       last_non_na_ep == "Legal Family Menu Telephony EP")
+  ) 
+#keep 176 instead of 185
+
+#fix quit hold music
+family_analysis2 <- family_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Abandoned - Quit Hold Music" |
+    
+    # But if activity_analysis IS the target, enforce extra rules
+    (activity_analysis == "Abandoned - Quit Hold Music" &
+       ep_name == "All LAC Queues Telephony EP" &
+       last_non_na_ep == "Legal Family Menu Telephony EP")
+  ) 
+#keep 109 instead of 110
+
+
+#fix pre queue 2
+family_analysis2 <- family_analysis2 %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    last_non_na_ep = lag(ep_name),
+    last_non_na_ep = zoo::na.locf(last_non_na_ep, na.rm = FALSE)
+  ) %>% 
+  filter(
+    # Keep ALL rows that are NOT the target activity
+    activity_analysis != "Abandoned - Pre Queue Message 2" |
+    
+    # But if activity_analysis IS the target, enforce extra rules
+    (activity_analysis == "Abandoned - Pre Queue Message 2" &
+       ep_name == "All LAC Queues Telephony EP" &
+       last_non_na_ep == "Legal Family Menu Telephony EP")
+  ) 
+#keep all 4
+
+
+#redo unique contact session ids
+family_analysis2 %>% count(contact_session_id) #22,244
+
 #PROPORTION OF ABANDONMENT OR NOT ABANDONMENT REASONS
-table <- family_analysis %>% 
+table <- family_analysis2 %>% 
   select(contact_session_id, activity_analysis) %>% 
   group_by(contact_session_id) %>%
   slice_tail(n = 1) %>%
   ungroup() %>% 
   count(activity_analysis) %>% 
-  mutate(proportion = n/9743, 
+  mutate(proportion = n/22244, 
          abandoned = case_when(
            grepl("Not Abandoned", activity_analysis, ignore.case = TRUE) ~ "Not Abandoned",
            grepl("Abandoned", activity_analysis, ignore.case = TRUE) ~ "Abandoned",
@@ -183,17 +365,18 @@ table <- family_analysis %>%
   relocate(abandoned) %>% 
   arrange(desc(n))
 
-#contact_session_id %in% (family_last3_rows %>% grepl("Senior", activity_analysis, ignore.case = TRUE))$contact_session_id 
-#~ "Not Abandoned - Exited Family Menu to Another Menu",
 
 ## SEE TABLE
 table %>% 
-  mutate(proportion = (percent(n/9743, accuracy = 0.01)))
+  mutate(proportion = (percent(n/22244, accuracy = 0.01)))
 
 #GT TABLE - ABANDONMENT/NOT REASONS
 table %>% 
   group_by(abandoned) %>% 
-  gt(rowname_col = "activity_analysis") %>% 
+  mutate(analysis = str_trim(str_remove(activity_analysis, "^[^-]+-"))) %>% 
+  select(-activity_analysis) %>% 
+  relocate(abandoned, analysis) %>% 
+  gt(rowname_col = "analysis") %>% 
   tab_header(title = md("**Call End Reasons**"), 
              subtitle = "Family Menu") |>
   cols_label(n = md("Number of Calls"), 
@@ -203,10 +386,10 @@ table %>%
     decimals = 2                 
   ) %>% 
   tab_options(row_group.background.color = "#31356e", 
-              table.font.size = px(12),      # Reduce font size for the entire table
-              data_row.padding = px(3),      # Adjusts padding for data rows
-              heading.padding = px(2),       # Adjusts padding for heading rows
-              column_labels.font.size = px(11)) |>  # Reduce font size for column labels
+              table.font.size = px(15),      # Reduce font size for the entire table
+              data_row.padding = px(5),      # Adjusts padding for data rows
+              heading.padding = px(2)       # Adjusts padding for heading rows 
+              ) |>
   data_color(
     columns = c(n),
     colors = scales::col_factor(
@@ -250,18 +433,33 @@ abandoned %>%
   )
 
 
-#Check categories
-family_analysis %>%
-  filter(activity_analysis == "Undetermined") %>% view()
-
+#any calls that come back to family from a submenu and then leave - 0
 family_analysis %>%
   filter(activity_analysis == "Abandoned - Family Menu") %>% 
   filter(contact_session_id %in% (family_last3_rows %>% filter(activity_name == "FamilyMenu" & 
-                                                            (lag(activity_name) == "DivorceOrParentingMenu"))))
+                                                            (lag(activity_name) == "DivorceOrParentingMenu" | 
+                                                               lag(activity_name) == "SimpleDivorceMenu" |
+                                                               lag(activity_name) == "ChildSupportMenu"))))
 
-#EXAMPLE FOR CLASS
-family_analysis %>% filter(contact_session_id == "9add5213-9391-4acd-8470-060e5c953d23") %>% view()
 
+
+table %>% 
+  filter(abandoned == "Abandoned") %>% 
+  group_by(abandoned) %>% 
+  mutate(analysis = str_trim(str_remove(activity_analysis, "^[^-]+-"))) %>% 
+  select(-activity_analysis) %>% 
+  mutate(proportion = n/sum(n)) %>% 
+  relocate(abandoned, analysis) %>% 
+  gt(rowname_col = "analysis") %>% 
+  tab_header(title = md("**Abandoned Call Reasons**"), 
+             subtitle = "Family Menu") |>
+  cols_label(n = md("Number of Calls"), 
+             proportion = md("Proportion of Calls")) |> 
+  fmt_percent(
+    columns = c(proportion),   
+    decimals = 2                 
+  )%>% 
+  tab_options(row_group.background.color = "#31356e")
 
 #### VISUALIZATION
 ggplot(abandoned, aes(x = "", y = proportion, fill = abandoned))+
@@ -277,7 +475,7 @@ ggplot(abandoned, aes(x = "", y = proportion, fill = abandoned))+
   scale_fill_manual(name = NULL, 
                     values = c("brown1", "seagreen", "grey80"),
   ) +
-  labs(title = "Proportion of Abandonment Reasons", 
+  labs(title = "Proportion of Abandonment", 
        subtitle = "Family Menu", 
        fill = NULL) +
   theme_minimal()+
