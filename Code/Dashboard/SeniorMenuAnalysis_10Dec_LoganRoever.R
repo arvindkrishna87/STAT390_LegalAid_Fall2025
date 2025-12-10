@@ -51,30 +51,57 @@ navigated_back2 %>% summarize(proportion = n_distinct(contact_session_id)/ n_dis
                               percent = proportion * 100)
 
 # find durations for double callers
-durations <- new_car_data %>% 
-  filter(!(activity_start_timestamp >= ymd("2025-10-01") & activity_start_timestamp <= ymd("2025-10-14"))) %>% 
-  group_by(contact_session_id) %>% 
-  summarize(start_time = min(activity_start_timestamp, na.rm = TRUE),
-            end_time = max(activity_start_timestamp, na.rm =TRUE),
-            call_duration = as.numeric(difftime(end_time, start_time, units = "secs"))
-            ) %>% 
-  ungroup() 
+call_chunks <- new_car_data %>%
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    prev_time = lag(activity_start_timestamp),
+    gap = as.numeric(difftime(activity_start_timestamp, prev_time, units = "mins")),
+    new_chunk = if_else(is.na(gap) | gap > 60, 1, 0),  # threshold = 60 mins
+    chunk_id = cumsum(new_chunk)
+  ) %>%
+  ungroup()
+
+# now compute durations per chunk
+durations <- call_chunks %>%
+  group_by(contact_session_id, chunk_id) %>%
+  summarise(
+    start_time = first(activity_start_timestamp),
+    end_time = last(activity_start_timestamp),
+    duration_secs = as.numeric(difftime(end_time, start_time, units = "secs"))
+  ) %>%
+  ungroup()
 
 average_durations <- durations %>% 
   filter(contact_session_id %in% navigated_back$contact_session_id) %>% 
-  summarize(avg_duration_secs = mean(call_duration, na.rm = TRUE),
-            median_duration = median(call_duration, na.rm = TRUE))
+  summarize(avg_duration_secs = mean(duration_secs, na.rm = TRUE),
+            median_duration = median(duration_secs, na.rm = TRUE))
 
 # again for old data
-durations2 <-car_data %>% 
-  group_by(contact_session_id) %>% 
-  summarize(start_time = min(activity_start_timestamp, na.rm = TRUE),
-            end_time = max(activity_start_timestamp, na.rm =TRUE),
-            call_duration = as.numeric(difftime(end_time, start_time, units = "secs"))
-  ) %>% 
-  ungroup() 
+call_chunks2 <- car_data %>%
+  filter(!is.na(activity_start_timestamp )) %>% 
+  arrange(contact_session_id, activity_start_timestamp) %>%
+  group_by(contact_session_id) %>%
+  mutate(
+    prev_time = lag(activity_start_timestamp),
+    gap = as.numeric(difftime(activity_start_timestamp, prev_time, units = "mins")),
+    new_chunk = if_else(is.na(gap) | gap > 60, 1, 0),  # threshold = 60 mins
+    chunk_id = cumsum(new_chunk)
+  ) %>%
+  ungroup()
+
+# now compute durations per chunk
+durations2 <- call_chunks %>%
+  group_by(contact_session_id, chunk_id) %>%
+  summarise(
+    start_time = first(activity_start_timestamp),
+    end_time = last(activity_start_timestamp),
+    duration_secs = as.numeric(difftime(end_time, start_time, units = "secs"))
+  ) %>%
+  ungroup()
 
 average_durations2 <- durations2 %>% 
   filter(contact_session_id %in% navigated_back2$contact_session_id) %>% 
-  summarize(avg_duration_secs = mean(call_duration, na.rm = TRUE),
-            median_sec = median(call_duration, na.rm = TRUE))
+  summarize(avg_duration_secs = mean(duration_secs, na.rm = TRUE),
+            median_duration = median(duration_secs, na.rm = TRUE))
+
