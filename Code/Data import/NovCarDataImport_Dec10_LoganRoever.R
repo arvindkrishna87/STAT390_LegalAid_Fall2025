@@ -47,7 +47,7 @@ car_data <- car_data %>%
   mutate(
     `Activity Start Timestamp` =
       parse_date_time(`Activity Start Timestamp`,
-                      orders = "Y/m/d I:M:S p",   # matches e.g. 2025/03/02 02:15:34 PM
+                      orders = c("Y/m/d I:M:S p", "mdy HM"),
                       tz = "UTC")
   )
 

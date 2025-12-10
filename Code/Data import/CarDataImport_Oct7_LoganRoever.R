@@ -1,5 +1,6 @@
 # load in libraries 
 library(tidyverse)
+library(readxl)
 
 
 ## USER INPUT REQUIRED -- write local path here
@@ -57,3 +58,5 @@ car_data <- car_data %>%
 
 # Quick structure check ----
 glimpse(car_data)
+
+write_csv(car_data, file = "/Users/loganroever/Desktop/stat390.nosync/car_data.csv")
