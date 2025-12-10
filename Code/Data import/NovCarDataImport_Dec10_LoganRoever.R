@@ -1,10 +1,9 @@
 # load in libraries 
 library(tidyverse)
-library(readxl)
 
 
 ## USER INPUT REQUIRED -- write local path here
-data_path <- "/Users/loganroever/Desktop/stat390.nosync/calls_data/CAR_-_EP_Flow_Activity_Queue__Agent_Names"
+data_path <- "/Users/loganroever/Desktop/stat390.nosync/New CAR data OctNov2025"
 # --------------------
 
 # Get all CSV and XLSX files 
@@ -48,15 +47,15 @@ car_data <- car_data %>%
   mutate(
     `Activity Start Timestamp` =
       parse_date_time(`Activity Start Timestamp`,
-                      orders = "Y/m/d I:M:S p",   # matches e.g. 2025/03/02 02:15:34 PM
+                      orders = c("Y/m/d I:M:S p", "mdy HM"),
                       tz = "UTC")
   )
 
 # Create an hour column for peak calling analysis ----
-car_data <- car_data %>%
+new_car_data <- car_data %>%
   mutate(hour = hour(`Activity Start Timestamp`))
 
 # Quick structure check ----
-glimpse(car_data)
+glimpse(new_car_data)
 
-write_csv(car_data, file = "/Users/loganroever/Desktop/stat390.nosync/car_data.csv")
+write_csv(new_car_data, file = "/Users/loganroever/Desktop/stat390.nosync/new_car_data.csv")
